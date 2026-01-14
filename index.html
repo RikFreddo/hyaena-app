@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     
     <style>
-        /* STILI GENERALI */
+        /* GENERAL STYLES */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #222; 
@@ -28,7 +28,7 @@
 
         .row { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-        /* BOTTONI */
+        /* BUTTONS */
         .btn {
             padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: #f2f2f7; 
             font-size: 13px; font-weight: 600; cursor: pointer; color: #333; display: flex; align-items: center; gap: 5px;
@@ -42,7 +42,7 @@
         .btn-excel { background-color: #1d6f42; color: white; border: none; }
         .btn-zoom { padding: 4px 10px; font-size: 16px; min-width: 30px; justify-content: center; }
 
-        /* Tasto Modalità Dubbio */
+        /* Doubt Mode Button */
         .btn-doubt-mode { border: 2px solid #ffd60a; background: #fffbe6; color: #b48900; }
         .btn-doubt-mode.active { background: #ffd60a; color: #000; border-color: #b48900; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 214, 10, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); } }
@@ -61,14 +61,13 @@
             display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
         }
 
-        /* VIEWPORT (Correzione Bordi) */
+        /* VIEWPORT */
         #viewport {
             flex-grow: 1; 
             overflow: auto; 
             position: relative; 
             background-color: #444;
             display: flex; 
-            /* Rimosso justify-content center per fix bordi */
             touch-action: none; 
             -webkit-overflow-scrolling: touch;
         }
@@ -77,11 +76,10 @@
             display: block; 
             background: white; 
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
-            /* Margin auto centra l'immagine quando è piccola, ma permette lo scroll quando è grande */
             margin: auto; 
         }
         
-        /* Cursori */
+        /* Cursors */
         .mode-pan canvas { cursor: grab; }
         .mode-draw canvas { cursor: crosshair; }
         .mode-select canvas { cursor: pointer; }
@@ -94,7 +92,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 500; border: 1px solid #b48900;
         }
 
-        /* MODALE */
+        /* MODAL */
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
         #modalBox { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
         .modal-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
@@ -106,13 +104,13 @@
 
     <div id="toolbar">
         <div class="row">
-            <label class="file-label">📷 Nuova<input type="file" id="inpFile" accept="image/*"></label>
-            <label class="file-label">📂 Apri<input type="file" id="inpProject" accept=".json"></label>
-            <button class="btn btn-blue" onclick="saveProject()">💾 Salva</button>
+            <label class="file-label">📷 New<input type="file" id="inpFile" accept="image/*"></label>
+            <label class="file-label">📂 Open<input type="file" id="inpProject" accept=".json"></label>
+            <button class="btn btn-blue" onclick="saveProject()">💾 Save</button>
             <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
             <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊 Info</button>
             <button class="btn btn-excel" onclick="exportExcel()">📊 Excel</button>
-            <button class="btn btn-calib" onclick="openCalibration()">📐 Calibra</button>
+            <button class="btn btn-calib" onclick="openCalibration()">📐 Calib</button>
         </div>
 
         <div class="row">
@@ -120,14 +118,14 @@
                 <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
                 <input type="range" id="zoomSlider" min="10" max="400" value="100" oninput="updateZoom(this.value)">
                 <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
-                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Adatta</button>
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Fit</button>
                 <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
             </div>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
-            <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Sposta</button>
-            <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Modifica</button>
+            <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Pan</button>
+            <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Edit</button>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
-            <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Mod. Dubbio</button>
+            <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt Mode</button>
         </div>
 
         <div class="row" id="toolsRow">
@@ -136,34 +134,34 @@
             <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
             <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Auto</button>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
-            <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Segna Dubbio</button>
-            <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Elimina</button>
-            <button class="btn" onclick="undo()" id="btnUndo">↩ Annulla</button>
-            <button class="btn" onclick="redo()" id="btnRedo">↪ Rifai</button>
+            <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark Doubt</button>
+            <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
+            <button class="btn" onclick="undo()" id="btnUndo">↩ Undo</button>
+            <button class="btn" onclick="redo()" id="btnRedo">↪ Redo</button>
         </div>
     </div>
 
-    <div id="stats-bar">Carica foto e calibra.</div>
+    <div id="stats-bar">Load photo and calibrate.</div>
 
     <div id="viewport" class="mode-pan">
-        <div id="doubtOverlayMsg">⚠️ MODALITÀ DUBBIO: Trascina per misurare (Perpendicolare)</div>
+        <div id="doubtOverlayMsg">⚠️ DOUBT MODE: Drag to measure (Perpendicular)</div>
         <canvas id="cvs" style="display:none;"></canvas>
     </div>
 
     <div id="modalOverlay">
         <div id="modalBox">
-            <h3>Calibrazione</h3>
+            <h3>Calibration</h3>
             <div class="modal-section">
-                <h4>Metodo 1: FOV</h4>
-                <input type="number" id="fovInput" class="inp-num" placeholder="Es. 500">
+                <h4>Method 1: FOV</h4>
+                <input type="number" id="fovInput" class="inp-num" placeholder="Ex. 500">
                 <select id="fovUnit" class="inp-sel">
                     <option value="µm">µm</option> <option value="mm">mm</option>
                 </select>
-                <br><br><button class="btn btn-blue" onclick="applyFOV()">Applica</button>
+                <br><br><button class="btn btn-blue" onclick="applyFOV()">Apply</button>
             </div>
             <div class="modal-section" style="border-bottom:none;">
-                <h4>Metodo 2: Manuale</h4>
-                <button class="btn" onclick="startMeasureRef()">📍 Preleva 2 punti</button>
+                <h4>Method 2: Manual</h4>
+                <button class="btn" onclick="startMeasureRef()">📍 Pick 2 points</button>
                 <br><br>
                 <div id="manualInputArea" style="opacity:0.5; pointer-events:none;">
                     <span id="pixelReadout" style="font-size:11px; font-weight:bold;">px: 0</span><br>
@@ -172,10 +170,10 @@
                         <option value="µm">µm</option> <option value="mm">mm</option>
                     </select>
                     <br><br>
-                    <button class="btn btn-blue" onclick="applyManual()">Applica Manuale</button>
+                    <button class="btn btn-blue" onclick="applyManual()">Apply Manual</button>
                 </div>
             </div>
-            <button class="btn btn-red" onclick="closeModal()" style="width:100%">Chiudi</button>
+            <button class="btn btn-red" onclick="closeModal()" style="width:100%">Close</button>
         </div>
     </div>
 
@@ -204,8 +202,8 @@
         
         let img = new Image();
         let items = []; 
-        let redoStack = []; // Stack per il Redo
-        let currentFileName = "risultato"; 
+        let redoStack = []; 
+        let currentFileName = "result"; 
 
         let mode = 'pan'; 
         let activeDrawTool = 'line_fs'; 
@@ -221,7 +219,7 @@
         let measurePoints = []; 
         let perpEndPos = {x:0, y:0};
 
-        // --- GESTIONE MODALITÀ ---
+        // --- MODE MANAGEMENT ---
         function setMode(m) {
             mode = m;
             viewport.className = 'mode-' + m;
@@ -238,7 +236,7 @@
         }
 
         function setDrawTool(toolName) {
-            if(isDoubtMode) { alert("Esci dalla modalità dubbio per disegnare."); return; }
+            if(isDoubtMode) { alert("Exit doubt mode to draw."); return; }
             activeDrawTool = toolName; setMode('draw');
         }
 
@@ -298,7 +296,7 @@
 
         function onDown(e) {
             if(!img.src) return;
-            // FIX GHOST CLICKS: Ignora click se non sono su canvas, viewport o overlay messaggio
+            // FIX GHOST CLICKS
             if(e.target !== cvs && e.target !== viewport && e.target.id !== 'doubtOverlayMsg') return;
 
             if(isDoubtMode) {
@@ -398,7 +396,7 @@
             if(!isDragging) return; isDragging = false;
 
             if(isDoubtMode && mode === 'doubt_measure') {
-                if(!isCalibrated) { alert("Devi calibrare prima!"); redraw(); return; }
+                if(!isCalibrated) { alert("You must calibrate first!"); redraw(); return; }
                 const distPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y);
                 const widthUm = getMicrometers(distPx);
                 if(widthUm < 5) selectedItem.catId = 'fs'; else if(widthUm < 15) selectedItem.catId = 'cs'; else selectedItem.catId = 'hcs';
@@ -481,13 +479,13 @@
         }
 
         function exportExcel() {
-            if(items.length===0) { alert("Nessun dato!"); return; }
+            if(items.length===0) { alert("No data!"); return; }
             let counts={}; STATS_ORDER.forEach(k=>counts[k]=0);
             items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
             let headers = STATS_ORDER.map(k => CATS[k].label).join(",");
             let values = STATS_ORDER.map(k => counts[k]).join(",");
-            let txt = `Unità: ${isCalibrated?unitName:'px'}\n` + headers + "\n" + values + "\n";
-            const l=document.createElement('a'); l.href='data:text/csv;charset=utf-8,'+encodeURI(txt); l.download=currentFileName+"_conteggi.csv"; l.click();
+            let txt = `Unit: ${isCalibrated?unitName:'px'}\n` + headers + "\n" + values + "\n";
+            const l=document.createElement('a'); l.href='data:text/csv;charset=utf-8,'+encodeURI(txt); l.download=currentFileName+"_counts.csv"; l.click();
         }
 
         function getMicrometers(px) { if(!isCalibrated) return 0; const val = px / pixelsPerUnit; if(unitName === 'mm') return val * 1000; if(unitName === 'm') return val * 1000000; if(unitName === 'nm') return val / 1000; return val; }
@@ -506,7 +504,7 @@
 
         function toggleActionButtons(show) { const disp = show ? 'inline-block' : 'none'; document.getElementById('btnDelete').style.display = disp; if(show && selectedItem && selectedItem.type === 'line' && !isDoubtMode && !selectedItem.isDoubt) { document.getElementById('btnMarkDoubt').style.display = 'inline-block'; } else { document.getElementById('btnMarkDoubt').style.display = 'none'; } }
         
-        // --- FUNZIONI ZOOM MIGLIORATE ---
+        // --- ZOOM FUNCTIONS ---
         function updateZoom(val) { 
             currentScale = val/100; 
             document.getElementById('zoomLabel').innerText = Math.round(val)+'%'; 
@@ -525,14 +523,14 @@
 
         function fitToScreen() {
             if(!img.src) return;
-            const vw = viewport.clientWidth - 20; // Margine sicurezza
+            const vw = viewport.clientWidth - 20; 
             const vh = viewport.clientHeight - 20;
             const ratioW = vw / img.width;
             const ratioH = vh / img.height;
             const bestRatio = Math.min(ratioW, ratioH);
             
             updateZoom(Math.floor(bestRatio * 100));
-            // Centra lo scroll
+            // Center scroll
             viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2;
             viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2;
         }
@@ -540,7 +538,7 @@
         function openCalibration() { document.getElementById('modalOverlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; isDoubtMode = false; /*safety*/ setMode('pan'); }
         
-        function startMeasureRef() { if(!img.src) return; closeModal(); setMode('measure'); measurePoints = []; alert("Clicca i due estremi della scala."); }
+        function startMeasureRef() { if(!img.src) return; closeModal(); setMode('measure'); measurePoints = []; alert("Click the two ends of the scale bar."); }
         function finishMeasureRef() {
             const d = Math.hypot(measurePoints[1].x - measurePoints[0].x, measurePoints[1].y - measurePoints[0].y);
             document.getElementById('modalOverlay').style.display='flex';
@@ -569,4 +567,101 @@
                 const src = isProject ? projectData.imageSrc : evt.target.result; 
                 img = new Image(); 
                 img.onload = () => { 
-                    cvs.style.display = 'block'; cvs.width = img.width; cv
+                    cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; 
+                    if(isProject) { 
+                        items = projectData.items || []; 
+                        if(projectData.calibration) { pixelsPerUnit=projectData.calibration.ppu; unitName=projectData.calibration.unit; isCalibrated=true; } 
+                    } else { 
+                        items=[]; isCalibrated=false; redoStack=[]; 
+                    } 
+                    fitToScreen(); 
+                    setMode('pan'); redraw(); 
+                }; 
+                img.src = src; 
+            }; 
+            if(isProject) r.readAsText(new Blob([""])); else r.readAsDataURL(file); 
+        }
+
+        function loadProjectFile(f) { 
+            currentFileName = f.name.replace(/\.[^/.]+$/, ""); 
+            const r=new FileReader(); r.onload=e=>{try{loadFile(null,true,JSON.parse(e.target.result))}catch(err){alert("Err")}}; r.readAsText(f); 
+        }
+
+        function saveProject() { 
+            if(!img.src)return; 
+            const d={imageSrc:img.src,items:items,calibration:{ppu:pixelsPerUnit,unit:unitName},date:new Date().toISOString()}; 
+            const b=new Blob([JSON.stringify(d)],{type:"application/json"}); 
+            const l=document.createElement('a'); 
+            l.download=currentFileName + ".json"; 
+            l.href=URL.createObjectURL(b); l.click(); 
+        }
+
+        function downloadImg() { 
+            if(!img.src)return; 
+            const p=selectedItem; selectedItem=null; redraw(); 
+            const l=document.createElement('a'); 
+            l.download=currentFileName + "_samp.jpg"; 
+            l.href=cvs.toDataURL('image/jpeg',0.9); l.click(); 
+            selectedItem=p; redraw(); 
+        }
+        
+        function downloadImgWithCounts() {
+            if(!img.src) return;
+            const p = selectedItem; selectedItem = null; 
+            
+            ctx.clearRect(0,0, cvs.width, cvs.height);
+            ctx.drawImage(img, 0, 0);
+            redraw(); 
+
+            let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
+            items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
+            
+            let statsText = `Calib: ${isCalibrated ? 'YES' : 'NO'} | `;
+            STATS_ORDER.forEach(k => { statsText += `${CATS[k].label}: ${counts[k]} | `; });
+
+            const H = cvs.height; const W = cvs.width;
+            const barH = Math.max(30, H * 0.05); 
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.fillRect(0, H - barH, W, barH);
+            
+            ctx.fillStyle = "black";
+            ctx.font = "bold " + (barH * 0.5) + "px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(statsText, W/2, H - barH/2);
+
+            const l = document.createElement('a');
+            l.download = currentFileName + "_count.jpg";
+            l.href = cvs.toDataURL('image/jpeg', 0.9);
+            l.click();
+
+            selectedItem = p;
+            redraw();
+        }
+
+        function undo() { 
+            if(items.length > 0) {
+                const it = items.pop();
+                redoStack.push(it);
+                redraw();
+            }
+        }
+
+        function redo() {
+            if(redoStack.length > 0) {
+                const it = redoStack.pop();
+                items.push(it);
+                redraw();
+            }
+        }
+
+        function deleteSelected() { 
+            if(selectedItem){
+                items=items.filter(i=>i!==selectedItem); 
+                selectedItem=null; toggleActionButtons(false); 
+                redraw();
+            }
+        }
+    </script>
+</body>
+</html>
