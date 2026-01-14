@@ -40,6 +40,7 @@
         .btn-red { background-color: #ff3b30; color: white; border: none; }
         .btn-calib { background-color: #ff9500; color: white; border: none; }
         .btn-excel { background-color: #1d6f42; color: white; border: none; }
+        .btn-zoom { padding: 4px 10px; font-size: 16px; min-width: 30px; justify-content: center; }
 
         /* Tasto Modalità Dubbio */
         .btn-doubt-mode { border: 2px solid #ffd60a; background: #fffbe6; color: #b48900; }
@@ -60,13 +61,25 @@
             display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
         }
 
-        /* VIEWPORT */
+        /* VIEWPORT (Correzione Bordi) */
         #viewport {
-            flex-grow: 1; overflow: auto; position: relative; background-color: #444;
-            display: flex; align-items: center; justify-content: center; 
-            touch-action: none; -webkit-overflow-scrolling: touch;
+            flex-grow: 1; 
+            overflow: auto; 
+            position: relative; 
+            background-color: #444;
+            display: flex; 
+            /* Rimosso justify-content center per fix bordi */
+            touch-action: none; 
+            -webkit-overflow-scrolling: touch;
         }
-        canvas { display: block; background: white; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        
+        canvas { 
+            display: block; 
+            background: white; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            /* Margin auto centra l'immagine quando è piccola, ma permette lo scroll quando è grande */
+            margin: auto; 
+        }
         
         /* Cursori */
         .mode-pan canvas { cursor: grab; }
@@ -75,7 +88,7 @@
         .mode-measure canvas { cursor: crosshair; }
 
         #doubtOverlayMsg {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 214, 10, 0.95); color: black; padding: 8px 20px;
             border-radius: 20px; font-weight: bold; font-size: 13px; pointer-events: none; display: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 500; border: 1px solid #b48900;
@@ -104,9 +117,11 @@
 
         <div class="row">
             <div id="zoomContainer">
-                <span>🔍</span>
-                <input type="range" id="zoomSlider" min="10" max="250" value="100" oninput="updateZoom(this.value)">
-                <span id="zoomLabel" style="font-size:11px; width:30px;">100%</span>
+                <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
+                <input type="range" id="zoomSlider" min="10" max="400" value="100" oninput="updateZoom(this.value)">
+                <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Adatta</button>
+                <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
             </div>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Sposta</button>
@@ -190,7 +205,7 @@
         let img = new Image();
         let items = []; 
         let redoStack = []; // Stack per il Redo
-        let currentFileName = "risultato"; // Nome file corrente
+        let currentFileName = "risultato"; 
 
         let mode = 'pan'; 
         let activeDrawTool = 'line_fs'; 
@@ -407,7 +422,7 @@
                 
                 if(newItem) {
                     items.push(newItem);
-                    redoStack = []; // Svuota redo se faccio azione nuova
+                    redoStack = []; 
                 }
                 redraw();
             }
@@ -462,7 +477,7 @@
             let html = isCalibrated ? `<span style="color:#666; font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
             STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
             statsBar.innerHTML = html.slice(0, -3);
-            return html; // Ritorna stringa per export
+            return html; 
         }
 
         function exportExcel() {
@@ -490,8 +505,38 @@
         }
 
         function toggleActionButtons(show) { const disp = show ? 'inline-block' : 'none'; document.getElementById('btnDelete').style.display = disp; if(show && selectedItem && selectedItem.type === 'line' && !isDoubtMode && !selectedItem.isDoubt) { document.getElementById('btnMarkDoubt').style.display = 'inline-block'; } else { document.getElementById('btnMarkDoubt').style.display = 'none'; } }
-        function updateZoom(val) { currentScale = val/100; document.getElementById('zoomLabel').innerText = val+'%'; if(img.src) { cvs.style.width = (img.width*currentScale)+"px"; cvs.style.height = (img.height*currentScale)+"px"; } }
         
+        // --- FUNZIONI ZOOM MIGLIORATE ---
+        function updateZoom(val) { 
+            currentScale = val/100; 
+            document.getElementById('zoomLabel').innerText = Math.round(val)+'%'; 
+            document.getElementById('zoomSlider').value = val;
+            if(img.src) { 
+                cvs.style.width = (img.width*currentScale)+"px"; 
+                cvs.style.height = (img.height*currentScale)+"px"; 
+            } 
+        }
+
+        function changeZoom(delta) {
+            let newVal = parseInt(zoomSlider.value) + delta;
+            newVal = Math.max(10, Math.min(400, newVal));
+            updateZoom(newVal);
+        }
+
+        function fitToScreen() {
+            if(!img.src) return;
+            const vw = viewport.clientWidth - 20; // Margine sicurezza
+            const vh = viewport.clientHeight - 20;
+            const ratioW = vw / img.width;
+            const ratioH = vh / img.height;
+            const bestRatio = Math.min(ratioW, ratioH);
+            
+            updateZoom(Math.floor(bestRatio * 100));
+            // Centra lo scroll
+            viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2;
+            viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2;
+        }
+
         function openCalibration() { document.getElementById('modalOverlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; isDoubtMode = false; /*safety*/ setMode('pan'); }
         
@@ -516,7 +561,6 @@
         function loadFile(file, isProject, projectData) { 
             if(!file && !projectData) return; 
             if(file) {
-                // Estrae nome file senza estensione
                 currentFileName = file.name.replace(/\.[^/.]+$/, "");
             }
 
@@ -525,109 +569,4 @@
                 const src = isProject ? projectData.imageSrc : evt.target.result; 
                 img = new Image(); 
                 img.onload = () => { 
-                    cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; 
-                    if(isProject) { 
-                        items = projectData.items || []; 
-                        if(projectData.calibration) { pixelsPerUnit=projectData.calibration.ppu; unitName=projectData.calibration.unit; isCalibrated=true; } 
-                    } else { 
-                        items=[]; isCalibrated=false; redoStack=[]; // Reset stack
-                    } 
-                    const ratio = Math.min((viewport.clientWidth-20)/img.width, (viewport.clientHeight-20)/img.height); 
-                    updateZoom(Math.min(100, Math.max(10, Math.floor(ratio*100)))); 
-                    zoomSlider.value = currentScale*100; setMode('pan'); redraw(); 
-                }; 
-                img.src = src; 
-            }; 
-            if(isProject) r.readAsText(new Blob([""])); else r.readAsDataURL(file); 
-        }
-
-        function loadProjectFile(f) { 
-            currentFileName = f.name.replace(/\.[^/.]+$/, ""); // Nome progetto come base
-            const r=new FileReader(); r.onload=e=>{try{loadFile(null,true,JSON.parse(e.target.result))}catch(err){alert("Err")}}; r.readAsText(f); 
-        }
-
-        function saveProject() { 
-            if(!img.src)return; 
-            const d={imageSrc:img.src,items:items,calibration:{ppu:pixelsPerUnit,unit:unitName},date:new Date().toISOString()}; 
-            const b=new Blob([JSON.stringify(d)],{type:"application/json"}); 
-            const l=document.createElement('a'); 
-            l.download=currentFileName + ".json"; // Nome dinamico
-            l.href=URL.createObjectURL(b); l.click(); 
-        }
-
-        function downloadImg() { 
-            if(!img.src)return; 
-            const p=selectedItem; selectedItem=null; redraw(); 
-            const l=document.createElement('a'); 
-            l.download=currentFileName + "_samp.jpg"; // Nome dinamico
-            l.href=cvs.toDataURL('image/jpeg',0.9); l.click(); 
-            selectedItem=p; redraw(); 
-        }
-        
-        // NUOVA FUNZIONE: Salva con Conteggi impressi
-        function downloadImgWithCounts() {
-            if(!img.src) return;
-            const p = selectedItem; selectedItem = null; 
-            
-            // 1. Ridisegna pulito e ottieni testo statistiche
-            ctx.clearRect(0,0, cvs.width, cvs.height);
-            ctx.drawImage(img, 0, 0);
-            redraw(); // Disegna elementi
-
-            // 2. Costruisci stringa conteggi
-            let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
-            items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
-            
-            let statsText = `Calib: ${isCalibrated ? 'SI' : 'NO'} | `;
-            STATS_ORDER.forEach(k => { statsText += `${CATS[k].label}: ${counts[k]} | `; });
-
-            // 3. Disegna rettangolo e testo in basso all'immagine
-            const H = cvs.height; const W = cvs.width;
-            const barH = Math.max(30, H * 0.05); 
-            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-            ctx.fillRect(0, H - barH, W, barH);
-            
-            ctx.fillStyle = "black";
-            ctx.font = "bold " + (barH * 0.5) + "px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(statsText, W/2, H - barH/2);
-
-            // 4. Scarica
-            const l = document.createElement('a');
-            l.download = currentFileName + "_count.jpg";
-            l.href = cvs.toDataURL('image/jpeg', 0.9);
-            l.click();
-
-            // 5. Ripristina stato normale
-            selectedItem = p;
-            redraw();
-        }
-
-        function undo() { 
-            if(items.length > 0) {
-                const it = items.pop();
-                redoStack.push(it);
-                redraw();
-            }
-        }
-
-        function redo() {
-            if(redoStack.length > 0) {
-                const it = redoStack.pop();
-                items.push(it);
-                redraw();
-            }
-        }
-
-        function deleteSelected() { 
-            if(selectedItem){
-                items=items.filter(i=>i!==selectedItem); 
-                selectedItem=null; toggleActionButtons(false); 
-                // Nota: Cancellare non va nello stack redo per semplicità, ma si può aggiungere
-                redraw();
-            }
-        }
-    </script>
-</body>
-</html>
+                    cvs.style.display = 'block'; cvs.width = img.width; cv
