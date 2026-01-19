@@ -305,7 +305,7 @@
 
         // --- MAIN APP LOGIC ---
         const CATS = { 'sp': {label:'Sp', color:'#007aff'}, 'lp': {label:'Lp', color:'#af52de'}, 'g': {label:'G', color:'#000000'}, 'pp': {label:'Pp', color:'#ff9500'}, 'fs': {label:'Fs', color:'#ff3b30'}, 'cs': {label:'Cs', color:'#ffcc00'}, 'hcs': {label:'HCs', color:'#34c759'} };
-        const STATS_ORDER = ['sp', 'lp', 'pp', 'g', 'fs', 'cs', 'hcs'];
+        const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
         const cvs = document.getElementById('cvs'); const ctx = cvs.getContext('2d'); const viewport = document.getElementById('viewport'); const statsBar = document.getElementById('stats-bar'); const zoomSlider = document.getElementById('zoomSlider'); const sampleListEl = document.getElementById('sampleList'); const projNameEl = document.getElementById('projNameDisplay'); const toolsRow = document.getElementById('toolsRow');
         
         let projectSamples = []; let activeSampleId = null; let currentProjectName = "Project_Results";
