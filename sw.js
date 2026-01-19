@@ -1,4 +1,4 @@
-const CACHE_NAME = "hyaena-v0.18-inputfix";
+const CACHE_NAME = "hyaena-v0.18.1-g_last";
 const ASSETS = [
   "./",
   "./index.html",
