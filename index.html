@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hyaena</title> <link rel="manifest" href="manifest.json">
+    <title>Hyaena</title>
+    
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e3dac9">
     <link rel="apple-touch-icon" href="icon.png">
     
@@ -40,7 +42,7 @@
         #mainMenu.hidden { transform: translateY(-100%); pointer-events: none; }
         
         .app-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .app-title { font-size: 28px; font-weight: 800; margin-bottom: 30px; } /* Sottotitolo rimosso */
+        .app-title { font-size: 28px; font-weight: 800; margin-bottom: 30px; }
 
         .menu-btn {
             width: 250px; padding: 15px; margin: 8px 0;
@@ -49,7 +51,12 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .menu-btn.secondary { background: var(--input-bg); color: var(--text-main); }
-        .version-footer { position: absolute; bottom: 20px; font-size: 12px; color: var(--text-sec); }
+        
+        /* FOOTER CORRETTO: Alzato e colorato meglio */
+        .version-footer { 
+            position: absolute; bottom: 50px; /* Alzato per iPad */
+            font-size: 13px; color: var(--text-sec); opacity: 0.7;
+        }
 
         #settingsPanel {
             display: none; flex-direction: column; gap: 15px; 
@@ -170,7 +177,9 @@
 
     <div id="mainMenu">
         <img src="icon.png" alt="Icon" class="app-logo">
-        <div class="app-title">Hyaena</div> <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
+        <div class="app-title">Hyaena</div>
+        
+        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
         <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load Project</button>
         <button class="menu-btn secondary" onclick="toggleSettings()"><span>⚙️</span> Settings</button>
 
@@ -182,7 +191,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.15 (Beta)</div>
+        <div class="version-footer">Version 0.16 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -354,10 +363,10 @@
             img = new Image(); 
             img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; fitToScreen(); redraw(); };
             
-            // UI RESET FOR NEW SAMPLE
             cvs.style.display = 'none';
             document.getElementById('noImageMsg').style.display = 'block';
-            document.getElementById('msgSampleName').innerText = sample.name; // Show name in center box
+            document.getElementById('msgSampleName').innerText = sample.name; 
+            statsBar.innerText = "Load photo to start.";
             
             renderSampleList(); redraw();
         }
@@ -402,7 +411,17 @@
                 const isEmpty = items.length === 0;
                 if(activeSampleId && !img.src && (isEmpty || isDefaultName)) { currentFileName = fname; if(currSample) currSample.name = fname; renderSampleList(); } 
                 else { const newSample = initNewSample(fname); projectSamples.push(newSample); activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false; }
-                const r = new FileReader(); r.onload = evt => { img = new Image(); img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); renderSampleList(); redraw(); }; img.src = evt.target.result; }; r.readAsDataURL(file);
+                const r = new FileReader(); 
+                r.onload = evt => { 
+                    img = new Image(); 
+                    img.onload = () => { 
+                        cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; 
+                        document.getElementById('noImageMsg').style.display = 'none'; 
+                        fitToScreen(); renderSampleList(); redraw(); 
+                    }; 
+                    img.src = evt.target.result; 
+                }; 
+                r.readAsDataURL(file);
             }
         }
         function exportProjectExcel() { syncState(); if(projectSamples.length === 0) { alert("No data!"); return; } let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n"; projectSamples.forEach(s => { let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(","); csv += row + "\n"; }); const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = currentProjectName + ".csv"; l.click(); }
@@ -436,7 +455,75 @@
         function finishMeasureRef() { const d = Math.hypot(measurePoints[1].x - measurePoints[0].x, measurePoints[1].y - measurePoints[0].y); document.getElementById('modalOverlay').style.display='flex'; document.getElementById('manualInputArea').style.opacity='1'; document.getElementById('manualInputArea').style.pointerEvents='auto'; document.getElementById('pixelReadout').innerText = "px: " + d.toFixed(1); document.getElementById('manualInputArea').dataset.d = d; setMode('pan'); }
         function applyManual() { const d = parseFloat(document.getElementById('manualInputArea').dataset.d); const val = parseFloat(document.getElementById('manInput').value); const unit = document.getElementById('manUnit').value; if(!img.src) { alert("Load image first!"); return; } if(!val) { alert("Enter valid number!"); return; } pixelsPerUnit = d / val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
         function applyFOV() { const val = parseFloat(document.getElementById('fovInput').value); const unit = document.getElementById('fovUnit').value; if(!img.src) { alert("Load image first!"); return; } if(!val) { alert("Enter valid number!"); return; } pixelsPerUnit = img.width/val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
+        
+        // --- FIXED REDRAW (PREVENTS WHITE SQUARE) ---
         function getMicrometers(px) { if(!isCalibrated) return 0; const val = px / pixelsPerUnit; if(unitName === 'mm') return val * 1000; if(unitName === 'm') return val * 1000000; if(unitName === 'nm') return val / 1000; return val; }
+
+        function redraw() {
+            try {
+                // Clear and draw image
+                ctx.clearRect(0,0, cvs.width, cvs.height);
+                if(img.src && img.width > 0) ctx.drawImage(img, 0, 0);
+                
+                let counts = {}; 
+                STATS_ORDER.forEach(k => counts[k]=0);
+                
+                const baseW = Math.max(3, (img.width || 1000) / 500);
+
+                if(items && items.length > 0) {
+                    items.forEach(it => {
+                        if(isDoubtMode && !it.isDoubt) return; 
+                        
+                        // Safety fallback for categories
+                        const catId = it.catId && CATS[it.catId] ? it.catId : 'sp';
+                        const conf = CATS[catId];
+                        const isSel = (it === selectedItem);
+                        
+                        let drawColor = conf.color; 
+                        if(it.isDoubt) { if(it.doubtResolved) drawColor = conf.color; else drawColor = "#ffd60a"; } 
+                        if(isSel) drawColor = "#00ffff";
+
+                        ctx.strokeStyle = drawColor; ctx.fillStyle = drawColor; ctx.lineWidth = isSel ? baseW*2 : baseW;
+                        ctx.shadowBlur = (isSel || (it.isDoubt && !it.doubtResolved)) ? 10 : 0; ctx.shadowColor = "black";
+                        
+                        if(it.isDoubt && !it.doubtResolved) ctx.setLineDash([baseW*2, baseW*2]); else ctx.setLineDash([]);
+
+                        if(it.type === 'point') { 
+                            ctx.beginPath(); ctx.arc(it.x, it.y, baseW*2.5, 0, Math.PI*2); ctx.fill(); 
+                        } 
+                        else if (it.type === 'line') {
+                            ctx.beginPath(); ctx.moveTo(it.x1, it.y1); ctx.lineTo(it.x2, it.y2); ctx.stroke();
+                            ctx.beginPath(); ctx.arc(it.x2, it.y2, baseW*1.5, 0, Math.PI*2); ctx.fill();
+                            if(it.widthVal && (isDoubtMode || isSel)) { 
+                                ctx.font = (baseW*3)+"px Arial"; ctx.fillStyle = "white"; 
+                                ctx.fillText(it.widthVal.toFixed(1)+"µm", (it.x1+it.x2)/2, (it.y1+it.y2)/2); 
+                            }
+                        } 
+                        else if (it.type === 'circle') { 
+                            ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI*2); ctx.stroke(); 
+                        }
+
+                        if(counts[catId] !== undefined) counts[catId]++;
+                    });
+                }
+                
+                ctx.setLineDash([]); ctx.shadowBlur = 0;
+
+                if(mode === 'measure') {
+                    ctx.fillStyle = "#ff00ff";
+                    measurePoints.forEach((p,i) => { ctx.beginPath(); ctx.arc(p.x, p.y, baseW*3, 0, Math.PI*2); ctx.fill(); ctx.font = (baseW*4)+"px Arial"; ctx.fillStyle="white"; ctx.fillText(i+1, p.x, p.y); });
+                }
+
+                // Update Stats Bar HTML
+                let html = isCalibrated ? `<span style="color:var(--text-sec); font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
+                STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
+                statsBar.innerHTML = html.slice(0, -3);
+
+            } catch(e) {
+                console.error("Redraw error:", e);
+                // Fail silently but don't freeze UI
+            }
+        }
 
         createNewSample(false);
     </script>
