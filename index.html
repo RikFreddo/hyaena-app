@@ -10,134 +10,178 @@
     <link rel="apple-touch-icon" href="icon.png">
     
     <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-body: #f2f2f7;
+            --bg-sidebar: #ffffff;
+            --bg-toolbar: #ffffff;
+            --text-main: #000000;
+            --text-sec: #666666;
+            --border: #ccc;
+            --item-hover: #f0f0f5;
+            --input-bg: #e5e5ea;
+            --modal-bg: #ffffff;
+            --accent: #007aff;
+            --viewport-bg: #444; /* Viewport always dark usually best for images */
+        }
+
+        /* DARK THEME OVERRIDES */
+        [data-theme="dark"] {
+            --bg-body: #000000;
+            --bg-sidebar: #1c1c1e;
+            --bg-toolbar: #1c1c1e;
+            --text-main: #ffffff;
+            --text-sec: #aaaaaa;
+            --border: #38383a;
+            --item-hover: #2c2c2e;
+            --input-bg: #2c2c2e;
+            --modal-bg: #2c2c2e;
+            --accent: #0a84ff;
+        }
+
         /* GENERAL STYLES */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: #222; 
+            background-color: var(--bg-body); color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
             display: flex; flex-direction: column; overflow: hidden;
             overscroll-behavior-y: none;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* LAYOUT CONTAINER */
-        #mainContainer {
-            display: flex; flex-grow: 1; overflow: hidden;
-            height: 100%; position: relative;
+        /* --- MAIN MENU (LANDING) --- */
+        #mainMenu {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-body); z-index: 3000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+        #mainMenu.hidden { transform: translateY(-100%); pointer-events: none; }
+        
+        .app-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .app-title { font-size: 28px; font-weight: 800; margin-bottom: 5px; }
+        .app-subtitle { font-size: 14px; color: var(--text-sec); margin-bottom: 40px; }
+
+        .menu-btn {
+            width: 250px; padding: 15px; margin: 8px 0;
+            background: var(--accent); color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .menu-btn.secondary { background: var(--input-bg); color: var(--text-main); }
+        
+        .version-footer {
+            position: absolute; bottom: 20px; font-size: 12px; color: var(--text-sec);
         }
 
-        /* SIDEBAR (Project List) */
+        /* SETTINGS PANEL IN MENU */
+        #settingsPanel {
+            display: none; flex-direction: column; gap: 15px; 
+            background: var(--bg-sidebar); padding: 20px; border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); margin-top: 20px; width: 280px;
+            border: 1px solid var(--border);
+        }
+        .theme-opt {
+            display: flex; justify-content: space-between; padding: 10px; 
+            background: var(--input-bg); border-radius: 8px; cursor: pointer;
+        }
+        .theme-opt.selected { border: 2px solid var(--accent); }
+
+        /* --- APP LAYOUT --- */
+        #mainContainer { display: flex; flex-grow: 1; overflow: hidden; height: 100%; position: relative; }
+
+        /* SIDEBAR */
         #sidebar {
-            width: 280px; background: #2c2c2e; color: white;
-            display: flex; flex-direction: column; border-right: 1px solid #444;
-            flex-shrink: 0; transition: width 0.3s, transform 0.3s;
-            z-index: 1500;
+            width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; flex-shrink: 0; 
+            transition: width 0.3s, transform 0.3s; z-index: 1500;
         }
         #sidebar.collapsed { width: 0; overflow: hidden; border: none; }
         #sidebar.fullscreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-right: none; }
         
         #projectHeader {
-            padding: 15px 12px; background: #1c1c1e; border-bottom: 1px solid #444;
+            padding: 15px 12px; background: var(--input-bg); border-bottom: 1px solid var(--border);
             display: flex; flex-direction: column; gap: 5px;
         }
         #projectTitleRow { display: flex; justify-content: space-between; align-items: center; }
-        #projNameDisplay { font-weight: bold; font-size: 16px; color: #ffd60a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #projNameDisplay { font-weight: bold; font-size: 16px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         #samplesHeader {
-            padding: 8px 12px; background: #3a3a3c; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #aaa;
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; background: var(--bg-toolbar); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sec);
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);
         }
 
-        #sampleList {
-            flex-grow: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none;
-        }
+        #sampleList { flex-grow: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
         .sample-item {
-            padding: 12px; border-bottom: 1px solid #3a3a3c; cursor: pointer; font-size: 13px;
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center; color: var(--text-main);
         }
-        .sample-item:hover { background: #3a3a3c; }
-        .sample-item.active { background: #007aff; color: white; }
+        .sample-item:hover { background: var(--item-hover); }
+        .sample-item.active { background: var(--accent); color: white; }
+        .sample-item.active .sample-stats { color: rgba(255,255,255,0.8); }
         
         .sample-info { flex-grow: 1; overflow: hidden; padding-right: 5px; }
-        .sample-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        /* FIX STATS VISIBILITY */
-        .sample-stats { 
-            font-size: 11px; opacity: 0.8; margin-top: 4px; line-height: 1.4;
-            white-space: normal; /* Permette al testo di andare a capo */
-        }
-        
+        .sample-stats { font-size: 11px; color: var(--text-sec); margin-top: 4px; line-height: 1.4; white-space: normal; }
         .sample-warning { color: #ff9f0a; font-size: 10px; display: none; margin-top:2px; }
         .no-img .sample-warning { display: block; }
 
-        .btn-icon-group { display: flex; gap: 2px; flex-shrink: 0; }
         .btn-icon-small {
-            background: none; border: none; color: inherit; opacity: 0.6; 
-            font-size: 16px; padding: 6px; cursor: pointer;
+            background: none; border: none; color: inherit; opacity: 0.6; font-size: 16px; padding: 6px; cursor: pointer;
         }
         .btn-icon-small:hover { opacity: 1; background: rgba(255,255,255,0.2); border-radius: 4px; }
-        .btn-icon-small.danger:hover { background: rgba(255, 59, 48, 0.3); color: #ff3b30; }
 
         /* WORK AREA */
-        #workArea {
-            flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden;
-        }
+        #workArea { flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
         /* TOOLBAR */
         #toolbar {
-            flex-shrink: 0; background: #fff; padding: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1000;
-            display: flex; flex-direction: column; gap: 8px;
-            transition: opacity 0.3s; /* Smooth transition for doubt mode */
+            flex-shrink: 0; background: var(--bg-toolbar); padding: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border);
         }
 
         .row { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 
         .btn {
-            padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: #f2f2f7; 
-            font-size: 13px; font-weight: 600; cursor: pointer; color: #333; display: flex; align-items: center; gap: 5px;
+            padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); 
+            font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-main); 
+            display: flex; align-items: center; gap: 5px;
         }
-        .btn.active { background-color: #007aff; color: white; border-color: #005bb5; }
+        .btn.active { background-color: var(--accent); color: white; border-color: var(--accent); }
+        
+        /* Colored buttons keep color but adapt border */
         .btn-green { background-color: #34c759; color: white; border: none; } 
         .btn-blue { background-color: #007aff; color: white; border: none; } 
         .btn-purple { background-color: #af52de; color: white; border: none; }
         .btn-red { background-color: #ff3b30; color: white; border: none; }
         .btn-calib { background-color: #ff9500; color: white; border: none; }
         .btn-excel { background-color: #1d6f42; color: white; border: none; }
-        .btn-zoom { padding: 4px 10px; font-size: 16px; min-width: 30px; justify-content: center; }
+        
+        .btn-doubt-mode { border: 2px solid #ffd60a; background: transparent; color: #b48900; }
+        [data-theme="dark"] .btn-doubt-mode { color: #ffd60a; }
+        .btn-doubt-mode.active { background: #ffd60a; color: #000; animation: pulse 2s infinite; }
 
-        .btn-doubt-mode { border: 2px solid #ffd60a; background: #fffbe6; color: #b48900; }
-        .btn-doubt-mode.active { background: #ffd60a; color: #000; border-color: #b48900; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 214, 10, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); } }
-
-        .btn-mark-doubt { background-color: #666; color: #ffd60a; border: 1px solid #ffd60a; }
-
-        input[type="file"] { display: none; }
-        .file-label { padding: 6px 10px; border-radius: 6px; background: #e5e5ea; font-size: 12px; cursor: pointer; border: 1px solid #ccc; }
-
-        #zoomContainer { display: flex; align-items: center; gap: 5px; background: #f2f2f7; padding: 4px 8px; border-radius: 15px; border: 1px solid #ddd; }
-        input[type=range] { width: 80px; }
+        .file-label { padding: 6px 10px; border-radius: 6px; background: var(--input-bg); font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--text-main); }
+        #zoomContainer { display: flex; align-items: center; gap: 5px; background: var(--input-bg); padding: 4px 8px; border-radius: 15px; border: 1px solid var(--border); }
 
         #stats-bar {
-            background: #f9f9f9; padding: 6px; font-size: 12px; font-weight: 600;
-            border-bottom: 1px solid #ccc; text-align: center; color: #333;
+            background: var(--bg-toolbar); padding: 6px; font-size: 12px; font-weight: 600;
+            border-bottom: 1px solid var(--border); text-align: center; color: var(--text-main);
             display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
         }
 
         #viewport {
             flex-grow: 1; overflow: auto; position: relative; 
-            background-color: #444; display: flex; 
+            background-color: var(--viewport-bg); display: flex; 
             touch-action: none; -webkit-overflow-scrolling: touch;
         }
+        canvas { display: block; background: white; box-shadow: 0 0 30px rgba(0,0,0,0.5); margin: auto; }
         
-        canvas { 
-            display: block; background: white; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.5); margin: auto; 
-        }
-        
+        /* Cursors */
         .mode-pan canvas { cursor: grab; }
         .mode-draw canvas { cursor: crosshair; }
         .mode-select canvas { cursor: pointer; }
-        .mode-measure canvas { cursor: crosshair; }
 
         #doubtOverlayMsg {
             position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
@@ -148,24 +192,52 @@
 
         #noImageMsg {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: rgba(255,255,255,0.5); text-align: center; font-weight: bold; pointer-events: none;
-            display: none;
+            color: rgba(255,255,255,0.5); text-align: center; font-weight: bold; pointer-events: none; display: none;
         }
 
         /* MODAL */
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
-        #modalBox { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
-        .modal-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .inp-num { padding: 8px; width: 80px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        .inp-sel { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; background: white; }
+        #modalBox { background: var(--modal-bg); color: var(--text-main); padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+        .modal-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .inp-num { padding: 8px; width: 80px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
+        .inp-sel { padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
     </style>
 </head>
 <body>
 
+    <div id="mainMenu">
+        <img src="icon.png" alt="Icon" class="app-logo">
+        <div class="app-title">Hyaena Pro</div>
+        <div class="app-subtitle">Micro-wear Analysis Tool</div>
+        
+        <button class="menu-btn" onclick="startApp()">
+            <span>➤</span> Start New Session
+        </button>
+        
+        <button class="menu-btn secondary" onclick="triggerLoadProject()">
+            <span>📂</span> Load Project
+        </button>
+        
+        <button class="menu-btn secondary" onclick="toggleSettings()">
+            <span>⚙️</span> Settings
+        </button>
+
+        <div id="settingsPanel">
+            <div style="font-weight:bold; margin-bottom:10px;">Appearance</div>
+            <div class="theme-opt" onclick="setTheme('light')" id="themeLight">☀️ Light</div>
+            <div class="theme-opt" onclick="setTheme('dark')" id="themeDark">🌙 Dark</div>
+            <div class="theme-opt" onclick="setTheme('auto')" id="themeAuto">🔄 Auto (System)</div>
+            <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
+        </div>
+
+        <div class="version-footer">Version 0.14 (Beta)</div>
+    </div>
+
     <div id="mainContainer">
+        
         <div id="sidebar">
             <div id="projectHeader">
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">CURRENT PROJECT</div>
+                <div style="font-size:10px; color:var(--text-sec); margin-bottom:2px;">CURRENT PROJECT</div>
                 <div id="projectTitleRow">
                     <span id="projNameDisplay">Project_Results</span>
                     <button class="btn-icon-small" onclick="renameProject()" title="Rename Project">✎</button>
@@ -186,16 +258,15 @@
         <div id="workArea">
             <div id="toolbar">
                 <div class="row">
-                    <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">☰ List</button>
+                    <button class="btn" onclick="showMainMenu()">☰ Menu</button>
+                    <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">◫ List</button>
                     <label class="file-label">📷 Img<input type="file" id="inpFile" accept="image/*"></label>
-                    <label class="file-label">📂 Load Proj<input type="file" id="inpProject" accept=".json"></label>
-                    
-                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Save Sample</button>
-                    <button class="btn btn-purple" onclick="saveProject()">📚 Save Project</button>
+                    <input type="file" id="inpProject" accept=".json" style="display:none"> <button class="btn btn-blue" onclick="saveSingleSample()">💾 Sample</button>
+                    <button class="btn btn-purple" onclick="saveProject()">📚 Project</button>
                     
                     <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
-                    <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊 Info</button>
-                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Excel (All)</button>
+                    <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊</button>
+                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Excel</button>
                     <button class="btn btn-calib" onclick="openCalibration()">📐 Calib</button>
                 </div>
 
@@ -207,11 +278,11 @@
                         <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Fit</button>
                         <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
                     </div>
-                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                    <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
                     <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Pan</button>
                     <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Edit</button>
-                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
-                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt Mode</button>
+                    <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
+                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt</button>
                 </div>
 
                 <div class="row" id="toolsRow">
@@ -219,9 +290,9 @@
                     <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')" style="border-left:5px solid #007aff">🔵 Sp</button>
                     <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
                     <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Auto</button>
-                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
-                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark Doubt</button>
-                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
+                    <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
+                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark</button>
+                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Del</button>
                     <button class="btn" onclick="undo()" id="btnUndo">↩ Undo</button>
                     <button class="btn" onclick="redo()" id="btnRedo">↪ Redo</button>
                 </div>
@@ -272,6 +343,57 @@
            navigator.serviceWorker.register('sw.js');
         }
 
+        // --- MENU & THEME LOGIC ---
+        function startApp() {
+            document.getElementById('mainMenu').classList.add('hidden');
+        }
+
+        function showMainMenu() {
+            document.getElementById('mainMenu').classList.remove('hidden');
+        }
+
+        function triggerLoadProject() {
+            document.getElementById('inpProject').click();
+            // We'll close menu in the file handler if success
+        }
+
+        function toggleSettings() {
+            const p = document.getElementById('settingsPanel');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Theme Handling
+        function setTheme(mode) {
+            localStorage.setItem('hyaena_theme', mode);
+            applyTheme(mode);
+            updateThemeUI(mode);
+        }
+
+        function applyTheme(mode) {
+            const root = document.documentElement;
+            if (mode === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                root.setAttribute('data-theme', mode);
+            }
+        }
+
+        function updateThemeUI(mode) {
+            ['themeLight', 'themeDark', 'themeAuto'].forEach(id => {
+                document.getElementById(id).classList.remove('selected');
+            });
+            if(mode === 'light') document.getElementById('themeLight').classList.add('selected');
+            else if(mode === 'dark') document.getElementById('themeDark').classList.add('selected');
+            else document.getElementById('themeAuto').classList.add('selected');
+        }
+
+        // Init Theme
+        const savedTheme = localStorage.getItem('hyaena_theme') || 'auto';
+        setTheme(savedTheme);
+
+
+        // --- MAIN APP LOGIC (unchanged logic, just re-integrated) ---
         const CATS = {
             'sp':  { label: 'Sp',  color: '#007aff' }, 
             'lp':  { label: 'Lp',  color: '#af52de' }, 
@@ -292,7 +414,6 @@
         const projNameEl = document.getElementById('projNameDisplay');
         const toolsRow = document.getElementById('toolsRow');
         
-        // STATE
         let projectSamples = []; 
         let activeSampleId = null;
         let currentProjectName = "Project_Results";
@@ -315,28 +436,19 @@
         let measurePoints = []; 
         let perpEndPos = {x:0, y:0};
 
-        // --- CORE SYNC ---
-        // This function ensures the Sidebar is ALWAYS in sync with drawings
         function syncState() {
             if(!activeSampleId) return;
             const idx = projectSamples.findIndex(s => s.id === activeSampleId);
             if(idx !== -1) {
                 projectSamples[idx].items = JSON.parse(JSON.stringify(items));
                 projectSamples[idx].calibration = { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated };
-                
-                // Update specific list item directly to avoid full re-render flicker
                 const li = sampleListEl.children[idx];
                 if(li) {
                      let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
                      items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
-                     
-                     // Build full string
                      let statParts = [];
-                     STATS_ORDER.forEach(k => {
-                         if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`);
-                     });
-                     let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data";
-                     
+                     STATS_ORDER.forEach(k => { if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
+                     let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data (0)";
                      const statsDiv = li.querySelector('.sample-stats');
                      if(statsDiv) statsDiv.innerText = statStr;
                 }
@@ -353,7 +465,7 @@
         }
 
         function createNewSample(askName = true) {
-            syncState(); // Save before switch
+            syncState(); 
             let name = "Sample_" + (projectSamples.length + 1);
             if(askName) {
                 const input = prompt("Name for new sample:", name);
@@ -389,10 +501,7 @@
 
         function renameProject() {
             const newName = prompt("Rename Project:", currentProjectName);
-            if(newName) {
-                currentProjectName = newName;
-                projNameEl.innerText = currentProjectName;
-            }
+            if(newName) { currentProjectName = newName; projNameEl.innerText = currentProjectName; }
         }
 
         function loadSampleIntoView(id) {
@@ -417,8 +526,7 @@
             img.onload = () => { 
                 cvs.style.display = 'block'; 
                 cvs.width = img.width; cvs.height = img.height; 
-                fitToScreen(); 
-                redraw(); 
+                fitToScreen(); redraw(); 
             };
             cvs.style.display = 'none';
             document.getElementById('noImageMsg').style.display = 'block';
@@ -437,12 +545,8 @@
 
                 let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
                 s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
-                
-                // Show condensed stats in sidebar
                 let statParts = [];
-                STATS_ORDER.forEach(k => {
-                    if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`);
-                });
+                STATS_ORDER.forEach(k => { if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
                 let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data (0)";
 
                 li.innerHTML = `
@@ -484,6 +588,11 @@
 
         function loadFile(file, isJsonLoad, jsonData) {
             if(!file && !jsonData) return;
+            // IF LOADING PROJECT, HIDE MENU
+            if(document.getElementById('mainMenu').style.display !== 'none') {
+                startApp();
+            }
+
             if(isJsonLoad || (file && file.name.endsWith('.json'))) {
                 const reader = new FileReader();
                 reader.onload = evt => {
@@ -556,7 +665,7 @@
         document.getElementById('inpFile').addEventListener('change', e => loadFile(e.target.files[0]));
         document.getElementById('inpProject').addEventListener('change', e => loadFile(e.target.files[0]));
 
-        // --- INTERACTION LOGIC (Improved) ---
+        // --- INTERACTION LOGIC (unchanged) ---
         function setMode(m) {
             mode = m; viewport.className = 'mode-' + m;
             ['btnPan', 'btnSelect'].forEach(id => document.getElementById(id).classList.remove('active'));
@@ -565,7 +674,6 @@
             if(m === 'draw') updateToolVisuals();
             else document.querySelectorAll('#toolsRow .btn').forEach(b => { if(!b.id.startsWith('btn')) b.classList.remove('active'); });
             
-            // Safety unlock if coming from bad state
             toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto';
             document.getElementById('btnMarkDoubt').style.display = 'none';
             document.getElementById('btnDelete').style.display = 'none';
@@ -588,10 +696,19 @@
             } else {
                 items.forEach(it => { if(it.doubtResolved) { it.isDoubt = false; } });
                 btn.classList.remove('active'); overlay.style.display = 'none'; setMode('pan');
-                // Ensure unlock
                 toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto';
             }
             redraw();
+        }
+
+        function markSelectedAsDoubt() {
+            if(selectedItem && selectedItem.type === 'line') {
+                selectedItem.isDoubt = true; selectedItem.doubtResolved = false; selectedItem.catId = 'fs'; 
+                selectedItem = null; 
+                document.getElementById('btnDelete').style.display='none'; 
+                document.getElementById('btnMarkDoubt').style.display='none';
+                redraw(); syncState();
+            }
         }
 
         function updateToolVisuals() {
@@ -607,9 +724,8 @@
             return { x: (cx - r.left) / currentScale, y: (cy - r.top) / currentScale };
         }
 
-        // Helper for selection tolerance
         function findItemAt(x, y) {
-            const th = 25 / currentScale; // Increased tolerance for easier selection
+            const th = 25 / currentScale; 
             const visibleItems = isDoubtMode ? items.filter(i => i.isDoubt) : items;
             for(let i = visibleItems.length - 1; i >= 0; i--) {
                 const it = visibleItems[i];
@@ -622,12 +738,12 @@
             } return null;
         }
 
-        // EVENT HANDLERS
         viewport.addEventListener('mousedown', onDown); viewport.addEventListener('touchstart', onDown, {passive: false});
         window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive: false});
         window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp);
 
         function onDown(e) {
+            if(!activeSampleId && document.getElementById('mainMenu').style.display !== 'none') return;
             if(!activeSampleId) return; 
             if(e.target !== cvs && e.target !== viewport && e.target.id !== 'doubtOverlayMsg') return;
             
@@ -641,12 +757,10 @@
                 }
                 return;
             }
-
             if(mode === 'measure') {
                 if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); measurePoints.push(pos); redraw();
                 if(measurePoints.length === 2) setTimeout(finishMeasureRef, 100); return;
             }
-
             if(mode === 'pan') { isDragging = true; panStart = { x: e.changedTouches?e.changedTouches[0].clientX:e.clientX, y: e.changedTouches?e.changedTouches[0].clientY:e.clientY, sx: viewport.scrollLeft, sy: viewport.scrollTop }; } 
             else if(mode === 'draw') { if(!img.src) return; if(e.cancelable) e.preventDefault(); isDragging = true; startPos = getImgPos(e); }
             else if(mode === 'select') {
@@ -670,7 +784,6 @@
             if(!isDragging) return;
             if(isDoubtMode && mode === 'doubt_measure') {
                 e.preventDefault(); const curr = getImgPos(e);
-                // logic for perpendicular calc...
                 const p1 = {x: selectedItem.x1, y: selectedItem.y1}; const p2 = {x: selectedItem.x2, y: selectedItem.y2};
                 let dx = p2.x - p1.x; let dy = p2.y - p1.y;
                 if(dx === 0 && dy === 0) perpEndPos = curr;
@@ -683,12 +796,10 @@
                 redraw(); 
                 ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(perpEndPos.x, perpEndPos.y);
                 ctx.strokeStyle = "white"; ctx.lineWidth = 2/currentScale; ctx.stroke();
-                // Calc text
                 const wPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const wUm = isCalibrated ? (wPx / pixelsPerUnit) : 0;
                 ctx.fillStyle = "white"; ctx.font = "bold "+(14/currentScale)+"px Arial";
                 ctx.fillText((isCalibrated ? wUm.toFixed(1)+" µm" : "No Calib"), perpEndPos.x+10, perpEndPos.y); return;
             }
-
             if(mode === 'pan') {
                 e.preventDefault(); let cx = e.changedTouches?e.changedTouches[0].clientX:e.clientX; let cy = e.changedTouches?e.changedTouches[0].clientY:e.clientY;
                 viewport.scrollLeft = panStart.sx - (cx - panStart.x); viewport.scrollTop = panStart.sy - (cy - panStart.y);
@@ -717,7 +828,7 @@
                 const widthUm = distPx / pixelsPerUnit;
                 if(widthUm < 5) selectedItem.catId = 'fs'; else if(widthUm < 15) selectedItem.catId = 'cs'; else selectedItem.catId = 'hcs';
                 selectedItem.doubtResolved = true; selectedItem.widthVal = widthUm; selectedItem = null; 
-                syncState(); // SYNC
+                syncState(); 
                 redraw(); return;
             }
 
@@ -725,7 +836,6 @@
                 const curr = getImgPos(e); const dist = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); let newItem = null;
                 if(activeDrawTool.startsWith('point_')) { newItem = { type:'point', catId: activeDrawTool==='point_sp'?'sp':'pp', x: curr.x, y: curr.y }; }
                 else if(activeDrawTool === 'circle_auto') {
-                    // Lowered threshold to 2px to catch small drags
                     if(dist > 2/currentScale) {
                         let cat = 'sp'; 
                         if(isCalibrated) { const dia = (dist*2)/pixelsPerUnit; if(dia >= 10 && dia <= 55) cat = 'lp'; else if(dia > 55) cat = 'g'; }
@@ -733,16 +843,12 @@
                     }
                 }
                 else if(activeDrawTool === 'line_fs') { if(dist > 5/currentScale) { newItem = { type:'line', catId: 'fs', x1: startPos.x, y1: startPos.y, x2: curr.x, y2: curr.y }; } }
-                
-                if(newItem) { items.push(newItem); redoStack = []; syncState(); } // SYNC HERE
+                if(newItem) { items.push(newItem); redoStack = []; syncState(); } 
                 redraw();
             }
-            if(mode === 'select') {
-                syncState(); // Sync after drag move
-            }
+            if(mode === 'select') { syncState(); }
         }
 
-        // Functions needing sync
         function undo() { if(items.length > 0) { const it = items.pop(); redoStack.push(it); redraw(); syncState(); } }
         function redo() { if(redoStack.length > 0) { const it = redoStack.pop(); items.push(it); redraw(); syncState(); } }
         function deleteSelected() { 
@@ -763,7 +869,6 @@
             }
         }
 
-        // --- CALIBRATION ---
         function openCalibration() { document.getElementById('modalOverlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; setMode('pan'); }
         function startMeasureRef() { if(!img.src) { alert("Load image first!"); return; } closeModal(); setMode('measure'); measurePoints = []; alert("Click the two ends of the scale bar."); }
@@ -787,7 +892,6 @@
             syncState(); closeModal(); redraw(); alert("Calibrated!");
         }
 
-        // --- UTILS ---
         function updateZoom(val) { currentScale = val/100; document.getElementById('zoomLabel').innerText = Math.round(val)+'%'; document.getElementById('zoomSlider').value = val; if(img.src) { cvs.style.width = (img.width*currentScale)+"px"; cvs.style.height = (img.height*currentScale)+"px"; } }
         function changeZoom(delta) { let newVal = parseInt(zoomSlider.value) + delta; newVal = Math.max(10, Math.min(400, newVal)); updateZoom(newVal); }
         function fitToScreen() { if(!img.src) return; const vw = viewport.clientWidth - 20; const vh = viewport.clientHeight - 20; const ratioW = vw / img.width; const ratioH = vh / img.height; const bestRatio = Math.min(ratioW, ratioH); updateZoom(Math.floor(bestRatio * 100)); viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2; viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2; }
@@ -817,7 +921,7 @@
                 ctx.fillStyle = "#ff00ff";
                 measurePoints.forEach((p,i) => { ctx.beginPath(); ctx.arc(p.x, p.y, baseW*3, 0, Math.PI*2); ctx.fill(); ctx.font = (baseW*4)+"px Arial"; ctx.fillStyle="white"; ctx.fillText(i+1, p.x, p.y); });
             }
-            let html = isCalibrated ? `<span style="color:#666; font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
+            let html = isCalibrated ? `<span style="color:var(--text-sec); font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
             STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
             statsBar.innerHTML = html.slice(0, -3);
             return html; 
