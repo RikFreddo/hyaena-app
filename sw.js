@@ -1,34 +1,705 @@
-const CACHE_NAME = "hyaena-v8-EN";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon.png"
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hyaena Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e3dac9">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <style>
+        /* GENERAL STYLES */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #222; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            display: flex; flex-direction: column; overflow: hidden;
+            overscroll-behavior-y: none;
+        }
 
-// Installazione
-self.addEventListener("install", (e) => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
-});
+        /* LAYOUT CONTAINER */
+        #mainContainer {
+            display: flex; flex-grow: 1; overflow: hidden;
+            height: 100%; position: relative;
+        }
 
-// Attivazione e Pulizia
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  return self.clients.claim();
-});
+        /* SIDEBAR (Project List) */
+        #sidebar {
+            width: 260px; background: #2c2c2e; color: white;
+            display: flex; flex-direction: column; border-right: 1px solid #444;
+            flex-shrink: 0; transition: width 0.3s, transform 0.3s;
+            z-index: 1500;
+        }
+        #sidebar.collapsed { width: 0; overflow: hidden; border: none; }
+        
+        /* Fullscreen Sidebar Mode */
+        #sidebar.fullscreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-right: none;
+        }
+        
+        #sidebarHeader {
+            padding: 12px; background: #1c1c1e; border-bottom: 1px solid #444;
+            font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        #sampleList {
+            flex-grow: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none;
+        }
+        .sample-item {
+            padding: 12px; border-bottom: 1px solid #3a3a3c; cursor: pointer; font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sample-item:hover { background: #3a3a3c; }
+        .sample-item.active { background: #007aff; color: white; }
+        
+        .sample-info { flex-grow: 1; }
+        .sample-stats { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+        .sample-warning { color: #ff9f0a; font-size: 10px; display: none; }
+        .no-img .sample-warning { display: block; }
 
-// Fetch
-self.addEventListener("fetch", (e) => {
-  e.respondWith(caches.match(e.request).then((response) => response || fetch(e.request)));
-});
+        .btn-icon-small {
+            background: none; border: none; color: inherit; opacity: 0.6; 
+            font-size: 16px; padding: 4px; cursor: pointer;
+        }
+        .btn-icon-small:hover { opacity: 1; background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        /* VIEWPORT AREA */
+        #workArea {
+            flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden;
+        }
+
+        /* TOOLBAR */
+        #toolbar {
+            flex-shrink: 0; background: #fff; padding: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .row { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        /* BUTTONS */
+        .btn {
+            padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: #f2f2f7; 
+            font-size: 13px; font-weight: 600; cursor: pointer; color: #333; display: flex; align-items: center; gap: 5px;
+        }
+        .btn.active { background-color: #007aff; color: white; border-color: #005bb5; }
+        
+        .btn-green { background-color: #34c759; color: white; border: none; } 
+        .btn-blue { background-color: #007aff; color: white; border: none; } 
+        .btn-purple { background-color: #af52de; color: white; border: none; }
+        .btn-red { background-color: #ff3b30; color: white; border: none; }
+        .btn-calib { background-color: #ff9500; color: white; border: none; }
+        .btn-excel { background-color: #1d6f42; color: white; border: none; }
+        .btn-zoom { padding: 4px 10px; font-size: 16px; min-width: 30px; justify-content: center; }
+
+        /* Doubt Mode Button */
+        .btn-doubt-mode { border: 2px solid #ffd60a; background: #fffbe6; color: #b48900; }
+        .btn-doubt-mode.active { background: #ffd60a; color: #000; border-color: #b48900; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 214, 10, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); } }
+
+        .btn-mark-doubt { background-color: #666; color: #ffd60a; border: 1px solid #ffd60a; }
+
+        input[type="file"] { display: none; }
+        .file-label { padding: 6px 10px; border-radius: 6px; background: #e5e5ea; font-size: 12px; cursor: pointer; border: 1px solid #ccc; }
+
+        #zoomContainer { display: flex; align-items: center; gap: 5px; background: #f2f2f7; padding: 4px 8px; border-radius: 15px; border: 1px solid #ddd; }
+        input[type=range] { width: 80px; }
+
+        #stats-bar {
+            background: #f9f9f9; padding: 6px; font-size: 12px; font-weight: 600;
+            border-bottom: 1px solid #ccc; text-align: center; color: #333;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+        }
+
+        /* VIEWPORT CANVAS */
+        #viewport {
+            flex-grow: 1; 
+            overflow: auto; 
+            position: relative; 
+            background-color: #444;
+            display: flex; 
+            touch-action: none; 
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        canvas { 
+            display: block; 
+            background: white; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            margin: auto; 
+        }
+        
+        /* Cursors */
+        .mode-pan canvas { cursor: grab; }
+        .mode-draw canvas { cursor: crosshair; }
+        .mode-select canvas { cursor: pointer; }
+        .mode-measure canvas { cursor: crosshair; }
+
+        #doubtOverlayMsg {
+            position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 214, 10, 0.95); color: black; padding: 8px 20px;
+            border-radius: 20px; font-weight: bold; font-size: 13px; pointer-events: none; display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 500; border: 1px solid #b48900;
+        }
+
+        #noImageMsg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.5); text-align: center; font-weight: bold; pointer-events: none;
+            display: none;
+        }
+
+        /* MODAL */
+        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+        #modalBox { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+        .modal-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .inp-num { padding: 8px; width: 80px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        .inp-sel { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; background: white; }
+    </style>
+</head>
+<body>
+
+    <div id="mainContainer">
+        
+        <div id="sidebar">
+            <div id="sidebarHeader">
+                <span>Samples</span>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn btn-blue" style="padding:4px 8px; font-size:11px;" onclick="createNewSample()">+ New</button>
+                    <button class="btn" style="padding:4px 8px; font-size:14px;" onclick="toggleSidebarFullscreen()" title="Expand">⤢</button>
+                </div>
+            </div>
+            <ul id="sampleList">
+                </ul>
+        </div>
+
+        <div id="workArea">
+            <div id="toolbar">
+                <div class="row">
+                    <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">☰ List</button>
+                    <label class="file-label">📷 Img<input type="file" id="inpFile" accept="image/*"></label>
+                    <label class="file-label">📂 Load Proj<input type="file" id="inpProject" accept=".json"></label>
+                    
+                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Save Sample</button>
+                    <button class="btn btn-purple" onclick="saveProject()">📚 Save Project</button>
+                    
+                    <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
+                    <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊 Info</button>
+                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Excel (All)</button>
+                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calib</button>
+                </div>
+
+                <div class="row">
+                    <div id="zoomContainer">
+                        <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
+                        <input type="range" id="zoomSlider" min="10" max="400" value="100" oninput="updateZoom(this.value)">
+                        <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
+                        <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Fit</button>
+                        <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
+                    </div>
+                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                    <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Pan</button>
+                    <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Edit</button>
+                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt Mode</button>
+                </div>
+
+                <div class="row" id="toolsRow">
+                    <button id="toolLineFs" class="btn active" onclick="setDrawTool('line_fs')" style="border-left:5px solid #ff3b30">📏 Scratches</button>
+                    <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')" style="border-left:5px solid #007aff">🔵 Sp</button>
+                    <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
+                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Auto</button>
+                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark Doubt</button>
+                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
+                    <button class="btn" onclick="undo()" id="btnUndo">↩ Undo</button>
+                    <button class="btn" onclick="redo()" id="btnRedo">↪ Redo</button>
+                </div>
+            </div>
+
+            <div id="stats-bar">Load photo to start.</div>
+
+            <div id="viewport" class="mode-pan">
+                <div id="doubtOverlayMsg">⚠️ DOUBT MODE: Drag to measure (Perpendicular)</div>
+                <div id="noImageMsg">🖼️ No Image Loaded<br>Drag & Drop or use 'Img' button</div>
+                <canvas id="cvs" style="display:none;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalOverlay">
+        <div id="modalBox">
+            <h3>Calibration</h3>
+            <div class="modal-section">
+                <h4>Method 1: FOV</h4>
+                <input type="number" id="fovInput" class="inp-num" placeholder="Ex. 500">
+                <select id="fovUnit" class="inp-sel">
+                    <option value="µm">µm</option> <option value="mm">mm</option>
+                </select>
+                <br><br><button class="btn btn-blue" onclick="applyFOV()">Apply</button>
+            </div>
+            <div class="modal-section" style="border-bottom:none;">
+                <h4>Method 2: Manual</h4>
+                <button class="btn" onclick="startMeasureRef()">📍 Pick 2 points</button>
+                <br><br>
+                <div id="manualInputArea" style="opacity:0.5; pointer-events:none;">
+                    <span id="pixelReadout" style="font-size:11px; font-weight:bold;">px: 0</span><br>
+                    <input type="number" id="manInput" class="inp-num" placeholder="Dist.">
+                    <select id="manUnit" class="inp-sel">
+                        <option value="µm">µm</option> <option value="mm">mm</option>
+                    </select>
+                    <br><br>
+                    <button class="btn btn-blue" onclick="applyManual()">Apply Manual</button>
+                </div>
+            </div>
+            <button class="btn btn-red" onclick="closeModal()" style="width:100%">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+           navigator.serviceWorker.register('sw.js');
+        }
+
+        const CATS = {
+            'sp':  { label: 'Sp',  color: '#007aff' }, 
+            'lp':  { label: 'Lp',  color: '#af52de' }, 
+            'g':   { label: 'G',   color: '#000000' }, 
+            'pp':  { label: 'Pp',  color: '#ff9500' }, 
+            'fs':  { label: 'Fs',  color: '#ff3b30' }, 
+            'cs':  { label: 'Cs',  color: '#ffcc00' }, 
+            'hcs': { label: 'HCs', color: '#34c759' }  
+        };
+        const STATS_ORDER = ['sp', 'lp', 'pp', 'g', 'fs', 'cs', 'hcs'];
+
+        const cvs = document.getElementById('cvs');
+        const ctx = cvs.getContext('2d');
+        const viewport = document.getElementById('viewport');
+        const statsBar = document.getElementById('stats-bar');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const sampleListEl = document.getElementById('sampleList');
+        
+        // --- PROJECT STATE ---
+        let projectSamples = []; 
+        let activeSampleId = null;
+        let img = new Image(); 
+        let items = []; 
+        let redoStack = []; 
+        let currentFileName = "sample"; 
+        
+        let mode = 'pan'; 
+        let activeDrawTool = 'line_fs'; 
+        let currentScale = 1;
+        let isDoubtMode = false;
+        let pixelsPerUnit = 1; let unitName = "px"; let isCalibrated = false;
+
+        let isDragging = false;
+        let startPos = {x:0, y:0};
+        let panStart = {x:0, y:0};
+        let selectedItem = null;
+        let dragItemStart = null;
+        let measurePoints = []; 
+        let perpEndPos = {x:0, y:0};
+
+        // --- SAMPLE MANAGEMENT ---
+
+        function initNewSample(name) {
+            return {
+                id: Date.now().toString(),
+                name: name,
+                items: [],
+                calibration: { ppu: 1, unit: 'px', calibrated: false },
+            };
+        }
+
+        function createNewSample() {
+            saveCurrentToProjectState();
+            const name = prompt("Name for new sample:", "Sample_" + (projectSamples.length + 1));
+            if(!name) return;
+            const newSample = initNewSample(name);
+            projectSamples.push(newSample);
+            loadSampleIntoView(newSample.id);
+            renderSampleList();
+        }
+
+        function renameSample(id) {
+            const sample = projectSamples.find(s => s.id === id);
+            if(!sample) return;
+            
+            const newName = prompt("Rename sample:", sample.name);
+            if(newName && newName !== sample.name) {
+                sample.name = newName;
+                if(activeSampleId === id) currentFileName = newName;
+                renderSampleList();
+            }
+        }
+
+        function saveCurrentToProjectState() {
+            if(!activeSampleId) return;
+            const idx = projectSamples.findIndex(s => s.id === activeSampleId);
+            if(idx !== -1) {
+                projectSamples[idx].items = JSON.parse(JSON.stringify(items));
+                projectSamples[idx].calibration = { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated };
+            }
+        }
+
+        function loadSampleIntoView(id) {
+            saveCurrentToProjectState(); 
+            activeSampleId = id;
+            const sample = projectSamples.find(s => s.id === id);
+            if(!sample) return;
+
+            items = JSON.parse(JSON.stringify(sample.items));
+            redoStack = [];
+            currentFileName = sample.name;
+            
+            if(sample.calibration) {
+                pixelsPerUnit = sample.calibration.ppu;
+                unitName = sample.calibration.unit;
+                isCalibrated = sample.calibration.calibrated;
+            }
+
+            // Image Visual Reset
+            img = new Image(); 
+            img.onload = () => { 
+                cvs.style.display = 'block'; 
+                cvs.width = img.width; cvs.height = img.height; 
+                fitToScreen(); 
+                redraw(); 
+            };
+            cvs.style.display = 'none';
+            document.getElementById('noImageMsg').style.display = 'block';
+            document.getElementById('noImageMsg').innerHTML = `Load image for:<br><b>${sample.name}</b>`;
+            
+            renderSampleList();
+            redraw();
+        }
+
+        function renderSampleList() {
+            sampleListEl.innerHTML = '';
+            projectSamples.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'sample-item ' + (s.id === activeSampleId ? 'active' : '');
+                
+                // Click logic: Click on li loads sample, but clicking buttons inside stops propagation
+                li.onclick = () => loadSampleIntoView(s.id);
+
+                // Stats calculation
+                let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
+                s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
+                let statStr = `Sp:${counts.sp} | Lp:${counts.lp} | Fs:${counts.fs}`;
+
+                // HTML Structure
+                li.innerHTML = `
+                    <div class="sample-info">
+                        <div style="font-weight:600">${s.name}</div>
+                        <div class="sample-stats">${statStr}</div>
+                        <div class="sample-warning ${activeSampleId===s.id && !img.src ? 'no-img' : ''}">⚠️ No Image</div>
+                    </div>
+                    <button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button>
+                `;
+                sampleListEl.appendChild(li);
+            });
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.remove('fullscreen'); // Safety
+            sb.classList.toggle('collapsed');
+        }
+
+        function toggleSidebarFullscreen() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.remove('collapsed'); // Safety
+            sb.classList.toggle('fullscreen');
+        }
+
+        // --- IO & SAVING ---
+
+        function saveSingleSample() {
+            if(!img.src) { alert("No image loaded!"); return; }
+            saveCurrentToProjectState();
+            const d = {
+                imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated },
+                date: new Date().toISOString()
+            };
+            let name = prompt("Filename for this sample:", currentFileName);
+            if(!name) return;
+            const b = new Blob([JSON.stringify(d)],{type:"application/json"}); 
+            const l = document.createElement('a'); l.download = name + ".json"; 
+            l.href = URL.createObjectURL(b); l.click(); 
+        }
+
+        function saveProject() {
+            saveCurrentToProjectState();
+            if(projectSamples.length === 0) { alert("Project is empty."); return; }
+            let projName = prompt("Name of this project?", "Project_Results");
+            if(!projName) return;
+            const projectData = { type: "hyaena_project", version: 1, date: new Date().toISOString(), samples: projectSamples };
+            const b = new Blob([JSON.stringify(projectData)],{type:"application/json"}); 
+            const l = document.createElement('a'); l.download = projName + ".json"; 
+            l.href = URL.createObjectURL(b); l.click(); 
+        }
+
+        function loadFile(file, isJsonLoad, jsonData) {
+            if(!file && !jsonData) return;
+
+            if(isJsonLoad || (file && file.name.endsWith('.json'))) {
+                const reader = new FileReader();
+                reader.onload = evt => {
+                    const data = jsonData || JSON.parse(evt.target.result);
+                    if(data.type === "hyaena_project") {
+                        if(confirm("Load project? This will replace current list.")) {
+                            projectSamples = data.samples;
+                            if(projectSamples.length > 0) loadSampleIntoView(projectSamples[0].id);
+                        }
+                    } else {
+                        const newName = file ? file.name.replace('.json','') : "Imported";
+                        const newSample = initNewSample(newName);
+                        newSample.items = data.items || [];
+                        if(data.calibration) { newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; }
+                        projectSamples.push(newSample);
+                        loadSampleIntoView(newSample.id);
+                        if(data.imageSrc) {
+                            img = new Image();
+                            img.onload = () => {
+                                cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height;
+                                document.getElementById('noImageMsg').style.display = 'none';
+                                fitToScreen(); redraw();
+                            };
+                            img.src = data.imageSrc;
+                        }
+                    }
+                };
+                if(file) reader.readAsText(file); else reader.onload({target:{result:JSON.stringify(jsonData)}}); 
+                return;
+            }
+
+            if(file && file.type.startsWith('image/')) {
+                const fname = file.name.replace(/\.[^/.]+$/, "");
+                if(activeSampleId && !img.src) {
+                    currentFileName = fname;
+                    const s = projectSamples.find(s=>s.id===activeSampleId);
+                    if(s && s.name.startsWith("Sample_")) s.name = fname; 
+                    renderSampleList(); // Refresh name
+                } else {
+                    const newSample = initNewSample(fname);
+                    projectSamples.push(newSample);
+                    activeSampleId = newSample.id;
+                    saveCurrentToProjectState();
+                    items = []; redoStack = []; isCalibrated = false;
+                }
+                const r = new FileReader(); 
+                r.onload = evt => { 
+                    img = new Image(); 
+                    img.onload = () => { 
+                        cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; 
+                        document.getElementById('noImageMsg').style.display = 'none';
+                        fitToScreen(); renderSampleList(); redraw(); 
+                    }; 
+                    img.src = evt.target.result; 
+                }; 
+                r.readAsDataURL(file);
+            }
+        }
+
+        function exportProjectExcel() {
+            saveCurrentToProjectState();
+            if(projectSamples.length === 0) { alert("No data!"); return; }
+            let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n";
+            projectSamples.forEach(s => {
+                let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
+                s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
+                let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(",");
+                csv += row + "\n";
+            });
+            const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = "Project_Summary.csv"; l.click();
+        }
+
+        document.getElementById('inpFile').addEventListener('change', e => loadFile(e.target.files[0]));
+        document.getElementById('inpProject').addEventListener('change', e => loadFile(e.target.files[0]));
+
+        // --- DRAWING & LOGIC (Standard) ---
+        function setMode(m) {
+            mode = m; viewport.className = 'mode-' + m;
+            ['btnPan', 'btnSelect'].forEach(id => document.getElementById(id).classList.remove('active'));
+            if(m === 'pan') document.getElementById('btnPan').classList.add('active');
+            if(m === 'select') document.getElementById('btnSelect').classList.add('active');
+            if(m === 'draw') updateToolVisuals();
+            else document.querySelectorAll('#toolsRow .btn').forEach(b => { if(!b.id.startsWith('btn')) b.classList.remove('active'); });
+            if(m !== 'select' && m !== 'doubt_measure' && m !== 'measure') { selectedItem = null; toggleActionButtons(false); redraw(); }
+        }
+        function setDrawTool(toolName) {
+            if(isDoubtMode) { alert("Exit doubt mode to draw."); return; }
+            activeDrawTool = toolName; setMode('draw');
+        }
+        function toggleDoubtMode() {
+            isDoubtMode = !isDoubtMode;
+            const btn = document.getElementById('btnDoubtMode');
+            const overlay = document.getElementById('doubtOverlayMsg');
+            if(isDoubtMode) {
+                btn.classList.add('active'); overlay.style.display = 'block'; setMode('select'); 
+                document.getElementById('toolsRow').style.opacity = '0.3'; document.getElementById('toolsRow').style.pointerEvents = 'none';
+            } else {
+                items.forEach(it => { if(it.doubtResolved) { it.isDoubt = false; } });
+                btn.classList.remove('active'); overlay.style.display = 'none'; setMode('pan');
+                document.getElementById('toolsRow').style.opacity = '1'; document.getElementById('toolsRow').style.pointerEvents = 'auto';
+            }
+            redraw();
+        }
+        function markSelectedAsDoubt() {
+            if(selectedItem && selectedItem.type === 'line') {
+                selectedItem.isDoubt = true; selectedItem.doubtResolved = false; selectedItem.catId = 'fs'; 
+                selectedItem = null; toggleActionButtons(false); redraw();
+            }
+        }
+        function updateToolVisuals() {
+            document.querySelectorAll('#toolsRow .btn').forEach(b => b.classList.remove('active'));
+            const map = {'line_fs': 'toolLineFs', 'point_sp': 'toolSp', 'point_pp': 'toolPp', 'circle_auto': 'toolCircle'};
+            if(map[activeDrawTool]) document.getElementById(map[activeDrawTool]).classList.add('active');
+        }
+        function getPerpendicularPoint(lineStart, lineEnd, clickStart, clickCurr) {
+            let dx = lineEnd.x - lineStart.x; let dy = lineEnd.y - lineStart.y;
+            if(dx === 0 && dy === 0) return clickCurr;
+            const len = Math.hypot(dx, dy); const perpX = -dy / len; const perpY = dx / len;
+            const dragX = clickCurr.x - clickStart.x; const dragY = clickCurr.y - clickStart.y;
+            const dist = dragX * perpX + dragY * perpY;
+            return { x: clickStart.x + perpX * dist, y: clickStart.y + perpY * dist };
+        }
+        function getImgPos(e) {
+            const r = cvs.getBoundingClientRect();
+            let cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            let cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            return { x: (cx - r.left) / currentScale, y: (cy - r.top) / currentScale };
+        }
+        viewport.addEventListener('mousedown', onDown); viewport.addEventListener('touchstart', onDown, {passive: false});
+        window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp);
+
+        function onDown(e) {
+            if(!activeSampleId) return; 
+            if(e.target !== cvs && e.target !== viewport && e.target.id !== 'doubtOverlayMsg') return;
+            if(isDoubtMode) {
+                if(e.cancelable) e.preventDefault(); const pos = getImgPos(e);
+                if(selectedItem) { isDragging = true; startPos = pos; mode = 'doubt_measure'; } 
+                else { const clicked = findItemAt(pos.x, pos.y); if(clicked && clicked.isDoubt) { selectedItem = clicked; redraw(); } else { selectedItem = null; redraw(); } }
+                return;
+            }
+            if(mode === 'measure') {
+                if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); measurePoints.push(pos); redraw();
+                if(measurePoints.length === 2) setTimeout(finishMeasureRef, 100); return;
+            }
+            if(mode === 'pan') { isDragging = true; panStart = { x: e.changedTouches?e.changedTouches[0].clientX:e.clientX, y: e.changedTouches?e.changedTouches[0].clientY:e.clientY, sx: viewport.scrollLeft, sy: viewport.scrollTop }; } 
+            else if(mode === 'draw') { if(!img.src) return; if(e.cancelable) e.preventDefault(); isDragging = true; startPos = getImgPos(e); }
+            else if(mode === 'select') {
+                if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); const clicked = findItemAt(pos.x, pos.y);
+                if(clicked) { selectedItem = clicked; isDragging = true; startPos = pos; dragItemStart = JSON.parse(JSON.stringify(selectedItem)); toggleActionButtons(true); } 
+                else { selectedItem = null; toggleActionButtons(false); } redraw();
+            }
+        }
+        function onMove(e) {
+            if(!isDragging) return;
+            if(isDoubtMode && mode === 'doubt_measure') {
+                e.preventDefault(); const curr = getImgPos(e);
+                const p1 = {x: selectedItem.x1, y: selectedItem.y1}; const p2 = {x: selectedItem.x2, y: selectedItem.y2};
+                perpEndPos = getPerpendicularPoint(p1, p2, startPos, curr); redraw(); 
+                ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(perpEndPos.x, perpEndPos.y);
+                ctx.strokeStyle = "white"; ctx.lineWidth = 2/currentScale; ctx.stroke();
+                const wPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const wUm = getMicrometers(wPx);
+                ctx.fillStyle = "white"; ctx.font = "bold "+(14/currentScale)+"px Arial";
+                ctx.fillText((isCalibrated ? wUm.toFixed(1)+" µm" : "No Calib"), perpEndPos.x+10, perpEndPos.y); return;
+            }
+            if(mode === 'pan') {
+                e.preventDefault(); let cx = e.changedTouches?e.changedTouches[0].clientX:e.clientX; let cy = e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+                viewport.scrollLeft = panStart.sx - (cx - panStart.x); viewport.scrollTop = panStart.sy - (cy - panStart.y);
+            }
+            else if(mode === 'draw') {
+                e.preventDefault(); const curr = getImgPos(e); redraw();
+                if(activeDrawTool.startsWith('line_')) { ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(curr.x, curr.y); ctx.strokeStyle = CATS.fs.color; ctx.lineWidth = 4/currentScale; ctx.stroke(); } 
+                else if(activeDrawTool === 'circle_auto') {
+                    const r = Math.hypot(curr.x - startPos.x, curr.y - startPos.y);
+                    ctx.beginPath(); ctx.arc(startPos.x, startPos.y, r, 0, Math.PI*2); ctx.strokeStyle = "#888"; ctx.lineWidth = 2/currentScale; ctx.stroke();
+                    const diaUm = getMicrometers(r*2); ctx.fillStyle="white"; ctx.font=(12/currentScale)+"px Arial"; ctx.fillText(isCalibrated?diaUm.toFixed(1)+"µm":"No Calib", curr.x, curr.y);
+                }
+            }
+            else if(mode === 'select' && selectedItem) {
+                e.preventDefault(); const curr = getImgPos(e); const dx = curr.x - startPos.x; const dy = curr.y - startPos.y;
+                if(selectedItem.type === 'point' || selectedItem.type === 'circle') { selectedItem.x = dragItemStart.x + dx; selectedItem.y = dragItemStart.y + dy; } 
+                else { selectedItem.x1 = dragItemStart.x1 + dx; selectedItem.y1 = dragItemStart.y1 + dy; selectedItem.x2 = dragItemStart.x2 + dx; selectedItem.y2 = dragItemStart.y2 + dy; } redraw();
+            }
+        }
+        function onUp(e) {
+            if(!isDragging) return; isDragging = false;
+            if(isDoubtMode && mode === 'doubt_measure') {
+                if(!isCalibrated) { alert("You must calibrate first!"); redraw(); return; }
+                const distPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const widthUm = getMicrometers(distPx);
+                if(widthUm < 5) selectedItem.catId = 'fs'; else if(widthUm < 15) selectedItem.catId = 'cs'; else selectedItem.catId = 'hcs';
+                selectedItem.doubtResolved = true; selectedItem.widthVal = widthUm; selectedItem = null; redraw(); return;
+            }
+            if(mode === 'draw') {
+                const curr = getImgPos(e); const dist = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); let newItem = null;
+                if(activeDrawTool.startsWith('point_')) { newItem = { type:'point', catId: activeDrawTool==='point_sp'?'sp':'pp', x: curr.x, y: curr.y }; }
+                else if(activeDrawTool === 'circle_auto') {
+                    if(dist > 5/currentScale) {
+                        let cat = 'sp'; if(isCalibrated) { const dia = getMicrometers(dist*2); if(dia >= 10 && dia <= 55) cat = 'lp'; else if(dia > 55) cat = 'g'; }
+                        newItem = { type:'circle', catId: cat, x: startPos.x, y: startPos.y, r: dist };
+                    }
+                }
+                else if(activeDrawTool === 'line_fs') { if(dist > 5/currentScale) { newItem = { type:'line', catId: 'fs', x1: startPos.x, y1: startPos.y, x2: curr.x, y2: curr.y }; } }
+                if(newItem) { items.push(newItem); redoStack = []; } redraw();
+            }
+        }
+        function redraw() {
+            ctx.clearRect(0,0, cvs.width, cvs.height);
+            if(img.src && img.width > 0) ctx.drawImage(img, 0, 0);
+            
+            let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
+            const baseW = Math.max(3, (img.width || 1000) / 500);
+
+            items.forEach(it => {
+                if(isDoubtMode && !it.isDoubt) return; 
+                const conf = CATS[it.catId] || CATS.sp; const isSel = (it === selectedItem);
+                let drawColor = conf.color; if(it.isDoubt) { if(it.doubtResolved) drawColor = conf.color; else drawColor = "#ffd60a"; } if(isSel) drawColor = "#00ffff";
+                ctx.strokeStyle = drawColor; ctx.fillStyle = drawColor; ctx.lineWidth = isSel ? baseW*2 : baseW;
+                ctx.shadowBlur = (isSel || (it.isDoubt && !it.doubtResolved)) ? 10 : 0; ctx.shadowColor = "black";
+                if(it.isDoubt && !it.doubtResolved) ctx.setLineDash([baseW*2, baseW*2]); else ctx.setLineDash([]);
+                if(it.type === 'point') { ctx.beginPath(); ctx.arc(it.x, it.y, baseW*2.5, 0, Math.PI*2); ctx.fill(); } 
+                else if (it.type === 'line') {
+                    ctx.beginPath(); ctx.moveTo(it.x1, it.y1); ctx.lineTo(it.x2, it.y2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(it.x2, it.y2, baseW*1.5, 0, Math.PI*2); ctx.fill();
+                    if(it.widthVal && (isDoubtMode || isSel)) { ctx.font = (baseW*3)+"px Arial"; ctx.fillStyle = "white"; ctx.fillText(it.widthVal.toFixed(1)+"µm", (it.x1+it.x2)/2, (it.y1+it.y2)/2); }
+                } else if (it.type === 'circle') { ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI*2); ctx.stroke(); }
+                if(counts[it.catId] !== undefined) counts[it.catId]++;
+            });
+            ctx.setLineDash([]); ctx.shadowBlur = 0;
+            if(mode === 'measure') {
+                ctx.fillStyle = "#ff00ff";
+                measurePoints.forEach((p,i) => { ctx.beginPath(); ctx.arc(p.x, p.y, baseW*3, 0, Math.PI*2); ctx.fill(); ctx.font = (baseW*4)+"px Arial"; ctx.fillStyle="white"; ctx.fillText(i+1, p.x, p.y); });
+            }
+            let html = isCalibrated ? `<span style="color:#666; font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
+            STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
+            statsBar.innerHTML = html.slice(0, -3);
+            return html; 
+        }
+        function downloadImg() { if(!img.src)return; const p=selectedItem; selectedItem=null; redraw(); const l=document.createElement('a'); l.download=currentFileName + "_samp.jpg"; l.href=cvs.toDataURL('image/jpeg',0.9); l.click(); selectedItem=p; redraw(); }
+        function downloadImgWithCounts() { if(!img.src) return; const p = selectedItem; selectedItem = null; ctx.clearRect(0,0, cvs.width, cvs.height); ctx.drawImage(img, 0, 0); redraw(); let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let statsText = `Calib: ${isCalibrated ? 'YES' : 'NO'} | `; STATS_ORDER.forEach(k => { statsText += `${CATS[k].label}: ${counts[k]} | `; }); const H = cvs.height; const W = cvs.width; const barH = Math.max(30, H * 0.05); ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; ctx.fillRect(0, H - barH, W, barH); ctx.fillStyle = "black"; ctx.font = "bold " + (barH * 0.5) + "px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(statsText, W/2, H - barH/2); const l = document.createElement('a'); l.download = currentFileName + "_count.jpg"; l.href = cvs.toDataURL('image/jpeg', 0.9); l.click(); selectedItem = p; redraw(); }
+        function undo() { if(items.length > 0) { const it = items.pop(); redoStack.push(it); redraw(); } }
+        function redo() { if(redoStack.length > 0) { const it = redoStack.pop(); items.push(it); redraw(); } }
+        function deleteSelected() { if(selectedItem){ items=items.filter(i=>i!==selectedItem); selectedItem=null; toggleActionButtons(false); redraw(); } }
+        function updateZoom(val) { currentScale = val/100; document.getElementById('zoomLabel').innerText = Math.round(val)+'%'; document.getElementById('zoomSlider').value = val; if(img.src) { cvs.style.width = (img.width*currentScale)+"px"; cvs.style.height = (img.height*currentScale)+"px"; } }
+        function changeZoom(delta) { let newVal = parseInt(zoomSlider.value) + delta; newVal = Math.max(10, Math.min(400, newVal)); updateZoom(newVal); }
+        function fitToScreen() { if(!img.src) return; const vw = viewport.clientWidth - 20; const vh = viewport.clientHeight - 20; const ratioW = vw / img.width; const ratioH = vh / img.height; const bestRatio = Math.min(ratioW, ratioH); updateZoom(Math.floor(bestRatio * 100)); viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2; viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2; }
+        function openCalibration() { document.getElementById('modalOverlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; isDoubtMode = false; setMode('pan'); }
+        function startMeasureRef() { if(!img.src) return; closeModal(); setMode('measure'); measurePoints = []; alert("Click the two ends of the scale bar."); }
+        function finishMeasureRef() { const d = Math.hypot(measurePoints[1].x - measurePoints[0].x, measurePoints[1].y - measurePoints[0].y); document.getElementById('modalOverlay').style.display='flex'; document.getElementById('manualInputArea').style.opacity='1'; document.getElementById('manualInputArea').style.pointerEvents='auto'; document.getElementById('pixelReadout').innerText = "px: " + d.toFixed(1); document.getElementById('manualInputArea').dataset.d = d; setMode('pan'); }
+        function applyManual() { const d = parseFloat(document.getElementById('manualInputArea').dataset.d); const val = parseFloat(document.getElementById('manInput').value); const unit = document.getElementById('manUnit').value; if(!val) return; pixelsPerUnit = d / val; unitName = unit; isCalibrated = true; closeModal(); redraw(); }
+        function applyFOV() { const val = parseFloat(document.getElementById('fovInput').value); const unit = document.getElementById('fovUnit').value; if(!val || !img.src) return; pixelsPerUnit = img.width/val; unitName = unit; isCalibrated = true; closeModal(); redraw(); }
+
+        createNewSample();
+    </script>
+</body>
+</html>
