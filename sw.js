@@ -1,4 +1,4 @@
-const CACHE_NAME = "hyaena-v12-pro-calibfix";
+const CACHE_NAME = "hyaena-v13-stability";
 const ASSETS = [
   "./",
   "./index.html",
