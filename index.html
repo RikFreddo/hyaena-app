@@ -186,7 +186,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.17 (Beta)</div>
+        <div class="version-footer">Version 0.18 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -384,12 +384,11 @@
         function saveSingleSample() { if(!img.src) { alert("No image loaded!"); return; } syncState(); const d = { imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated }, date: new Date().toISOString() }; let name = prompt("Filename for this sample:", currentFileName); if(!name) return; const b = new Blob([JSON.stringify(d)],{type:"application/json"}); const l = document.createElement('a'); l.download = name + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         function saveProject() { syncState(); if(projectSamples.length === 0) { alert("Project is empty."); return; } const projectData = { type: "hyaena_project", version: 1, name: currentProjectName, date: new Date().toISOString(), samples: projectSamples }; const b = new Blob([JSON.stringify(projectData)],{type:"application/json"}); const l = document.createElement('a'); l.download = currentProjectName + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         
-        // --- FIXED LOADFILE (Allows attaching image to existing sample) ---
+        // --- FIXED LOADFILE (Detects placeholder) ---
         function loadFile(file, isJsonLoad, jsonData) {
             if(!file && !jsonData) return;
             if(document.getElementById('mainMenu').style.display !== 'none') { startApp(); }
             
-            // PROJECT JSON LOADING
             if(isJsonLoad || (file && file.name.endsWith('.json'))) {
                 const reader = new FileReader();
                 reader.onload = evt => {
@@ -401,26 +400,24 @@
                         if(data.imageSrc) { img = new Image(); img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); redraw(); }; img.src = data.imageSrc; }
                     }
                 };
-                if(file) reader.readAsText(file); else reader.onload({target:{result:JSON.stringify(jsonData)}}); return;
+                if(file) reader.readAsText(file); else reader.onload({target:{result:JSON.stringify(jsonData)}}); 
+                // Reset input to allow reloading same file later
+                if(!isJsonLoad) document.getElementById('inpProject').value = '';
+                return;
             }
 
-            // IMAGE LOADING
             if(file && file.type.startsWith('image/')) {
                 const fname = file.name.replace(/\.[^/.]+$/, "");
                 const currSample = projectSamples.find(s => s.id === activeSampleId);
                 
-                // CRUCIAL FIX: If the user is viewing a sample but no image is loaded (noImageMsg is visible),
-                // we ATTACH this image to the current sample, instead of creating a new one.
-                const waitingForImage = activeSampleId && (document.getElementById('noImageMsg').style.display !== 'none');
+                // LOGICA CORRETTA: Se il canvas è nascosto, stiamo aspettando una foto per il campione corrente
+                // Indipendentemente da quanti item ci sono o dal nome.
+                const waitingForImage = activeSampleId && (cvs.style.display === 'none');
 
                 if(waitingForImage) {
-                    // Update name only if it was a default generic name
-                    if(currSample && currSample.name.startsWith("Sample_")) {
-                        currSample.name = fname;
-                        currentFileName = fname;
-                    }
+                    if(currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
                     renderSampleList();
-                    // DO NOT CREATE NEW SAMPLE, use existing activeSampleId
+                    // Non creiamo nuovo campione, usiamo quello attivo
                 } else {
                     const newSample = initNewSample(fname); projectSamples.push(newSample); activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false;
                 }
@@ -436,10 +433,15 @@
                     img.src = evt.target.result; 
                 }; 
                 r.readAsDataURL(file);
+                
+                // RESET IMPORTANTE per permettere reload
+                document.getElementById('inpFile').value = '';
             }
         }
 
         function exportProjectExcel() { syncState(); if(projectSamples.length === 0) { alert("No data!"); return; } let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n"; projectSamples.forEach(s => { let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(","); csv += row + "\n"; }); const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = currentProjectName + ".csv"; l.click(); }
+        
+        // Listeners
         document.getElementById('inpFile').addEventListener('change', e => loadFile(e.target.files[0]));
         document.getElementById('inpProject').addEventListener('change', e => loadFile(e.target.files[0]));
 
