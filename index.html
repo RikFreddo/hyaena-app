@@ -175,7 +175,7 @@
         <div class="app-title">Hyaena</div>
         
         <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
-        <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load Project</button>
+        <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load/Import Project</button>
         <button class="menu-btn secondary" onclick="toggleSettings()"><span>⚙️</span> Settings</button>
 
         <div id="settingsPanel">
@@ -186,7 +186,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.19 (Beta)</div>
+        <div class="version-footer">Version 0.20 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -215,7 +215,8 @@
                     <button class="btn" onclick="showMainMenu()">☰ Menu</button>
                     <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">◫ List</button>
                     <label class="file-label">📷 Img<input type="file" id="inpFile" accept="image/*"></label>
-                    <input type="file" id="inpProject" accept=".json" style="display:none">
+                    <label class="file-label">📂 Import<input type="file" id="inpProject" accept=".json" multiple></label>
+                    
                     <button class="btn btn-blue" onclick="saveSingleSample()">💾 Sample</button>
                     <button class="btn btn-purple" onclick="saveProject()">📚 Project</button>
                     <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
@@ -303,9 +304,7 @@
         const savedTheme = localStorage.getItem('hyaena_theme') || 'auto'; setTheme(savedTheme);
 
         const CATS = { 'sp': {label:'Sp', color:'#007aff'}, 'lp': {label:'Lp', color:'#af52de'}, 'g': {label:'G', color:'#000000'}, 'pp': {label:'Pp', color:'#ff9500'}, 'fs': {label:'Fs', color:'#ff3b30'}, 'cs': {label:'Cs', color:'#ffcc00'}, 'hcs': {label:'HCs', color:'#34c759'} };
-        // --- QUI HO SPOSTATO 'g' IN FONDO PER TE ---
         const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
-        
         const cvs = document.getElementById('cvs'); const ctx = cvs.getContext('2d'); const viewport = document.getElementById('viewport'); const statsBar = document.getElementById('stats-bar'); const zoomSlider = document.getElementById('zoomSlider'); const sampleListEl = document.getElementById('sampleList'); const projNameEl = document.getElementById('projNameDisplay'); const toolsRow = document.getElementById('toolsRow');
         
         let projectSamples = []; let activeSampleId = null; let currentProjectName = "Project_Results";
@@ -384,58 +383,77 @@
         function saveSingleSample() { if(!img.src) { alert("No image loaded!"); return; } syncState(); const d = { imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated }, date: new Date().toISOString() }; let name = prompt("Filename for this sample:", currentFileName); if(!name) return; const b = new Blob([JSON.stringify(d)],{type:"application/json"}); const l = document.createElement('a'); l.download = name + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         function saveProject() { syncState(); if(projectSamples.length === 0) { alert("Project is empty."); return; } const projectData = { type: "hyaena_project", version: 1, name: currentProjectName, date: new Date().toISOString(), samples: projectSamples }; const b = new Blob([JSON.stringify(projectData)],{type:"application/json"}); const l = document.createElement('a'); l.download = currentProjectName + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         
-        function loadFile(file, isJsonLoad, jsonData) {
-            if(!file && !jsonData) return;
+        // --- MULTI-IMPORT & LOGIC ---
+        function handleFileSelection(e) {
+            const files = Array.from(e.target.files);
+            if(files.length === 0) return;
             if(document.getElementById('mainMenu').style.display !== 'none') { startApp(); }
-            
-            if(isJsonLoad || (file && file.name.endsWith('.json'))) {
-                const reader = new FileReader();
-                reader.onload = evt => {
-                    const data = jsonData || JSON.parse(evt.target.result);
-                    if(data.type === "hyaena_project") {
-                        if(confirm("Load project? This will replace current list.")) { projectSamples = data.samples; currentProjectName = data.name || "Imported_Project"; projNameEl.innerText = currentProjectName; if(projectSamples.length > 0) loadSampleIntoView(projectSamples[0].id); else createNewSample(false); }
+
+            files.forEach(file => {
+                if(file.name.endsWith('.json')) {
+                    // JSON Import
+                    const reader = new FileReader();
+                    reader.onload = evt => {
+                        try {
+                            const data = JSON.parse(evt.target.result);
+                            if(data.type === "hyaena_project") {
+                                if(confirm("Load project? This will replace current list.")) { projectSamples = data.samples; currentProjectName = data.name || "Project"; projNameEl.innerText = currentProjectName; if(projectSamples.length > 0) loadSampleIntoView(projectSamples[0].id); else createNewSample(false); }
+                            } else {
+                                // Single Import
+                                const newName = file.name.replace('.json','');
+                                const newSample = initNewSample(newName);
+                                newSample.items = data.items || [];
+                                if(data.calibration) { newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; }
+                                projectSamples.push(newSample);
+                                // Don't auto-switch view on bulk import, just refresh list
+                                renderSampleList();
+                            }
+                        } catch(err) { console.error("Error parsing JSON", err); }
+                    };
+                    reader.readAsText(file);
+                } else if(file.type.startsWith('image/')) {
+                    // Image Load
+                    const fname = file.name.replace(/\.[^/.]+$/, "");
+                    const currSample = projectSamples.find(s => s.id === activeSampleId);
+                    const waitingForImage = activeSampleId && (cvs.style.display === 'none');
+
+                    if(waitingForImage) {
+                        if(currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
+                        renderSampleList();
+                        // Load immediately
+                        const r = new FileReader();
+                        r.onload = evt => { 
+                            img = new Image(); 
+                            img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); redraw(); }; 
+                            img.src = evt.target.result; 
+                        };
+                        r.readAsDataURL(file);
                     } else {
-                        const newName = file ? file.name.replace('.json','') : "Imported"; const newSample = initNewSample(newName); newSample.items = data.items || []; if(data.calibration) { newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; } projectSamples.push(newSample); loadSampleIntoView(newSample.id);
-                        if(data.imageSrc) { img = new Image(); img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); redraw(); }; img.src = data.imageSrc; }
+                        // Create new sample if dragging image onto active work
+                        const newSample = initNewSample(fname); projectSamples.push(newSample); 
+                        // If it's a single image drop, switch to it. If bulk, maybe just add.
+                        // Assuming single drop for image usually.
+                        activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false;
+                        
+                        const r = new FileReader();
+                        r.onload = evt => { 
+                            img = new Image(); 
+                            img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); renderSampleList(); redraw(); }; 
+                            img.src = evt.target.result; 
+                        };
+                        r.readAsDataURL(file);
                     }
-                };
-                if(file) reader.readAsText(file); else reader.onload({target:{result:JSON.stringify(jsonData)}}); 
-                if(!isJsonLoad) document.getElementById('inpProject').value = '';
-                return;
-            }
-
-            if(file && file.type.startsWith('image/')) {
-                const fname = file.name.replace(/\.[^/.]+$/, "");
-                const currSample = projectSamples.find(s => s.id === activeSampleId);
-                const waitingForImage = activeSampleId && (cvs.style.display === 'none');
-
-                if(waitingForImage) {
-                    if(currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
-                    renderSampleList();
-                } else {
-                    const newSample = initNewSample(fname); projectSamples.push(newSample); activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false;
                 }
-                
-                const r = new FileReader(); 
-                r.onload = evt => { 
-                    img = new Image(); 
-                    img.onload = () => { 
-                        cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; 
-                        document.getElementById('noImageMsg').style.display = 'none'; 
-                        fitToScreen(); renderSampleList(); redraw(); 
-                    }; 
-                    img.src = evt.target.result; 
-                }; 
-                r.readAsDataURL(file);
-                document.getElementById('inpFile').value = '';
-            }
+            });
+            // Reset inputs
+            e.target.value = '';
         }
+
+        document.getElementById('inpFile').addEventListener('change', handleFileSelection);
+        document.getElementById('inpProject').addEventListener('change', handleFileSelection);
 
         function exportProjectExcel() { syncState(); if(projectSamples.length === 0) { alert("No data!"); return; } let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n"; projectSamples.forEach(s => { let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(","); csv += row + "\n"; }); const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = currentProjectName + ".csv"; l.click(); }
         
-        document.getElementById('inpFile').addEventListener('change', e => loadFile(e.target.files[0]));
-        document.getElementById('inpProject').addEventListener('change', e => loadFile(e.target.files[0]));
-
         function setMode(m) { mode = m; viewport.className = 'mode-' + m; ['btnPan', 'btnSelect'].forEach(id => document.getElementById(id).classList.remove('active')); if(m === 'pan') document.getElementById('btnPan').classList.add('active'); if(m === 'select') document.getElementById('btnSelect').classList.add('active'); if(m === 'draw') updateToolVisuals(); else document.querySelectorAll('#toolsRow .btn').forEach(b => { if(!b.id.startsWith('btn')) b.classList.remove('active'); }); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; document.getElementById('btnMarkDoubt').style.display = 'none'; document.getElementById('btnDelete').style.display = 'none'; selectedItem = null; redraw(); }
         function setDrawTool(toolName) { if(isDoubtMode) { alert("Exit doubt mode to draw."); return; } activeDrawTool = toolName; setMode('draw'); }
         function toggleDoubtMode() { isDoubtMode = !isDoubtMode; const btn = document.getElementById('btnDoubtMode'); const overlay = document.getElementById('doubtOverlayMsg'); if(isDoubtMode) { btn.classList.add('active'); overlay.style.display = 'block'; setMode('select'); toolsRow.style.opacity = '0.3'; toolsRow.style.pointerEvents = 'none'; } else { items.forEach(it => { if(it.doubtResolved) { it.isDoubt = false; } }); btn.classList.remove('active'); overlay.style.display = 'none'; setMode('pan'); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; } redraw(); }
@@ -507,7 +525,6 @@
             } catch(e) { console.error("Redraw error:", e); }
         }
 
-        // --- NEW IMPROVED EXPORT FUNCTIONS ---
         function downloadImg() { 
             try {
                 if(!img.src) { alert("No image loaded/visible to download."); return; }
