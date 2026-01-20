@@ -186,7 +186,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.18 (Beta)</div>
+        <div class="version-footer">Version 0.19 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -289,7 +289,6 @@
     <script>
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
-        // --- MENU & THEME LOGIC ---
         function startApp() { document.getElementById('mainMenu').classList.add('hidden'); }
         function showMainMenu() { document.getElementById('mainMenu').classList.remove('hidden'); }
         function triggerLoadProject() { document.getElementById('inpProject').click(); }
@@ -303,9 +302,10 @@
         function updateThemeUI(mode) { ['themeLight', 'themeDark', 'themeAuto'].forEach(id => { document.getElementById(id).classList.remove('selected'); }); if(mode === 'light') document.getElementById('themeLight').classList.add('selected'); else if(mode === 'dark') document.getElementById('themeDark').classList.add('selected'); else document.getElementById('themeAuto').classList.add('selected'); }
         const savedTheme = localStorage.getItem('hyaena_theme') || 'auto'; setTheme(savedTheme);
 
-        // --- MAIN APP LOGIC ---
         const CATS = { 'sp': {label:'Sp', color:'#007aff'}, 'lp': {label:'Lp', color:'#af52de'}, 'g': {label:'G', color:'#000000'}, 'pp': {label:'Pp', color:'#ff9500'}, 'fs': {label:'Fs', color:'#ff3b30'}, 'cs': {label:'Cs', color:'#ffcc00'}, 'hcs': {label:'HCs', color:'#34c759'} };
+        // --- QUI HO SPOSTATO 'g' IN FONDO PER TE ---
         const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
+        
         const cvs = document.getElementById('cvs'); const ctx = cvs.getContext('2d'); const viewport = document.getElementById('viewport'); const statsBar = document.getElementById('stats-bar'); const zoomSlider = document.getElementById('zoomSlider'); const sampleListEl = document.getElementById('sampleList'); const projNameEl = document.getElementById('projNameDisplay'); const toolsRow = document.getElementById('toolsRow');
         
         let projectSamples = []; let activeSampleId = null; let currentProjectName = "Project_Results";
@@ -384,7 +384,6 @@
         function saveSingleSample() { if(!img.src) { alert("No image loaded!"); return; } syncState(); const d = { imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated }, date: new Date().toISOString() }; let name = prompt("Filename for this sample:", currentFileName); if(!name) return; const b = new Blob([JSON.stringify(d)],{type:"application/json"}); const l = document.createElement('a'); l.download = name + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         function saveProject() { syncState(); if(projectSamples.length === 0) { alert("Project is empty."); return; } const projectData = { type: "hyaena_project", version: 1, name: currentProjectName, date: new Date().toISOString(), samples: projectSamples }; const b = new Blob([JSON.stringify(projectData)],{type:"application/json"}); const l = document.createElement('a'); l.download = currentProjectName + ".json"; l.href = URL.createObjectURL(b); l.click(); }
         
-        // --- FIXED LOADFILE (Detects placeholder) ---
         function loadFile(file, isJsonLoad, jsonData) {
             if(!file && !jsonData) return;
             if(document.getElementById('mainMenu').style.display !== 'none') { startApp(); }
@@ -401,7 +400,6 @@
                     }
                 };
                 if(file) reader.readAsText(file); else reader.onload({target:{result:JSON.stringify(jsonData)}}); 
-                // Reset input to allow reloading same file later
                 if(!isJsonLoad) document.getElementById('inpProject').value = '';
                 return;
             }
@@ -409,15 +407,11 @@
             if(file && file.type.startsWith('image/')) {
                 const fname = file.name.replace(/\.[^/.]+$/, "");
                 const currSample = projectSamples.find(s => s.id === activeSampleId);
-                
-                // LOGICA CORRETTA: Se il canvas è nascosto, stiamo aspettando una foto per il campione corrente
-                // Indipendentemente da quanti item ci sono o dal nome.
                 const waitingForImage = activeSampleId && (cvs.style.display === 'none');
 
                 if(waitingForImage) {
                     if(currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
                     renderSampleList();
-                    // Non creiamo nuovo campione, usiamo quello attivo
                 } else {
                     const newSample = initNewSample(fname); projectSamples.push(newSample); activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false;
                 }
@@ -433,15 +427,12 @@
                     img.src = evt.target.result; 
                 }; 
                 r.readAsDataURL(file);
-                
-                // RESET IMPORTANTE per permettere reload
                 document.getElementById('inpFile').value = '';
             }
         }
 
         function exportProjectExcel() { syncState(); if(projectSamples.length === 0) { alert("No data!"); return; } let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n"; projectSamples.forEach(s => { let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(","); csv += row + "\n"; }); const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = currentProjectName + ".csv"; l.click(); }
         
-        // Listeners
         document.getElementById('inpFile').addEventListener('change', e => loadFile(e.target.files[0]));
         document.getElementById('inpProject').addEventListener('change', e => loadFile(e.target.files[0]));
 
@@ -514,6 +505,57 @@
                 STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
                 statsBar.innerHTML = html.slice(0, -3);
             } catch(e) { console.error("Redraw error:", e); }
+        }
+
+        // --- NEW IMPROVED EXPORT FUNCTIONS ---
+        function downloadImg() { 
+            try {
+                if(!img.src) { alert("No image loaded/visible to download."); return; }
+                const p=selectedItem; selectedItem=null; 
+                redraw(); 
+                const l=document.createElement('a'); 
+                l.download=currentFileName + "_samp.jpg"; 
+                l.href=cvs.toDataURL('image/jpeg',0.9); 
+                l.click(); 
+                selectedItem=p; 
+                redraw();
+            } catch(e) { alert("Export Error: " + e.message); }
+        }
+
+        function downloadImgWithCounts() { 
+            try {
+                if(!img.src) { alert("No image loaded/visible to download."); return; }
+                const p = selectedItem; selectedItem = null; 
+                ctx.clearRect(0,0, cvs.width, cvs.height); 
+                ctx.drawImage(img, 0, 0); 
+                redraw(); 
+                
+                let counts = {}; 
+                STATS_ORDER.forEach(k => counts[k]=0); 
+                if(items) items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); 
+                
+                let statsText = `Calib: ${isCalibrated ? 'YES' : 'NO'} | `; 
+                STATS_ORDER.forEach(k => { 
+                    if(CATS[k]) statsText += `${CATS[k].label}: ${counts[k]} | `; 
+                }); 
+                
+                const H = cvs.height; const W = cvs.width; 
+                const barH = Math.max(30, H * 0.05); 
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; 
+                ctx.fillRect(0, H - barH, W, barH); 
+                ctx.fillStyle = "black"; 
+                ctx.font = "bold " + (barH * 0.5) + "px Arial"; 
+                ctx.textAlign = "center"; 
+                ctx.textBaseline = "middle"; 
+                ctx.fillText(statsText, W/2, H - barH/2); 
+                
+                const l = document.createElement('a'); 
+                l.download = currentFileName + "_count.jpg"; 
+                l.href = cvs.toDataURL('image/jpeg', 0.9); 
+                l.click(); 
+                selectedItem = p; 
+                redraw(); 
+            } catch(e) { alert("Export Error: " + e.message); }
         }
 
         createNewSample(false);
