@@ -217,17 +217,16 @@
                     <label class="file-label">📷 Img<input type="file" id="inpFile" accept="image/*"></label>
                     <label class="file-label">📂 Import<input type="file" id="inpProject" accept=".json" multiple></label>
                     
-                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Sample</button>
-                    <button class="btn btn-purple" onclick="saveProject()">📚 Project</button>
-                    <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
+                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Save Sample</button>
+                    <button class="btn btn-purple" onclick="saveProject()">📚 Save Project</button>
+                    <button class="btn btn-green" onclick="downloadImg()">🖼️ Save JPG</button>
                     <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊</button>
-                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Excel</button>
-                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calib</button>
+                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Export Excel</button>
                 </div>
                 <div class="row">
                     <div id="zoomContainer">
                         <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
-                        <input type="range" id="zoomSlider" min="10" max="400" value="100" oninput="updateZoom(this.value)">
+                        <input type="range" id="zoomSlider" min="10" max="200" value="100" oninput="updateZoom(this.value)">
                         <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
                         <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Fit</button>
                         <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
@@ -236,16 +235,17 @@
                     <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Pan</button>
                     <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Edit</button>
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
-                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt</button>
+                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt mode</button>
                 </div>
                 <div class="row" id="toolsRow">
+                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calibrate</button>
                     <button id="toolLineFs" class="btn active" onclick="setDrawTool('line_fs')" style="border-left:5px solid #ff3b30">📏 Scratches</button>
                     <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')" style="border-left:5px solid #007aff">🔵 Sp</button>
                     <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
-                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Auto</button>
+                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Pit size</button>
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
-                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark</button>
-                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Del</button>
+                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark as doubt</button>
+                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
                     <button class="btn" onclick="undo()" id="btnUndo">↩ Undo</button>
                     <button class="btn" onclick="redo()" id="btnRedo">↪ Redo</button>
                 </div>
