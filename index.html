@@ -128,7 +128,11 @@
         [data-theme="dark"] .btn-doubt-mode { color: #ffd60a; }
         .btn-doubt-mode.active { background: #ffd60a; color: #000; animation: pulse 2s infinite; }
 
-        .file-label { padding: 6px 10px; border-radius: 6px; background: var(--input-bg); font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--text-main); }
+        .file-label { padding: 6px; border-radius: 6px; background: var(--input-bg); font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--text-main); }
+        /* Questo nasconde il brutto tasto grigio e la scritta */
+        .file-label input[type="file"] {
+        display: none;
+}
         #zoomContainer { display: flex; align-items: center; gap: 5px; background: var(--input-bg); padding: 4px 8px; border-radius: 15px; border: 1px solid var(--border); }
         #stats-bar {
             background: var(--bg-toolbar); padding: 6px; font-size: 12px; font-weight: 600;
@@ -174,7 +178,7 @@
         <img src="icon.png" alt="Icon" class="app-logo">
         <div class="app-title">Hyaena</div>
         
-        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
+        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start Session</button>
         <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load/Import Project</button>
         <button class="menu-btn secondary" onclick="toggleSettings()"><span>⚙️</span> Settings</button>
 
@@ -186,7 +190,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.20 (Beta)</div>
+        <div class="version-footer">Version 0.21 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -214,16 +218,17 @@
                 <div class="row">
                     <button class="btn" onclick="showMainMenu()">☰ Menu</button>
                     <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">◫ List</button>
-                    <label class="file-label">📷 Img<input type="file" id="inpFile" accept="image/*"></label>
-                    <label class="file-label">📂 Import<input type="file" id="inpProject" accept=".json" multiple></label>
+                    <label class="file-label">📷 Load<input type="file" id="inpFile" accept="image/*"></label>
+                    <label class="file-label">📂 Open<input type="file" id="inpProject" accept=".json" multiple></label>
                     
-                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Save Sample</button>
-                    <button class="btn btn-purple" onclick="saveProject()">📚 Save Project</button>
-                    <button class="btn btn-green" onclick="downloadImg()">🖼️ Save JPG</button>
-                    <button class="btn btn-green" onclick="downloadImgWithCounts()">📸+📊</button>
-                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 Export Excel</button>
+                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Sample</button>
+                    <button class="btn btn-purple" onclick="saveProject()">📚 Project</button>
+                    <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
+                    <button class="btn btn-green" onclick="downloadImgWithCounts()">🖼️+📊</button>
+                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 </button>
                 </div>
                 <div class="row">
+                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calibrate</button>
                     <div id="zoomContainer">
                         <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
                         <input type="range" id="zoomSlider" min="10" max="200" value="100" oninput="updateZoom(this.value)">
@@ -238,11 +243,10 @@
                     <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt mode</button>
                 </div>
                 <div class="row" id="toolsRow">
-                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calibrate</button>
                     <button id="toolLineFs" class="btn active" onclick="setDrawTool('line_fs')" style="border-left:5px solid #ff3b30">📏 Scratches</button>
                     <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')" style="border-left:5px solid #007aff">🔵 Sp</button>
                     <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
-                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Pit size</button>
+                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Pit</button>
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
                     <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark as doubt</button>
                     <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
