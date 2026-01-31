@@ -1,184 +1,671 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hyaena</title>
-    
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e3dac9">
     <link rel="apple-touch-icon" href="icon.png">
-    
+
     <style>
         /* --- THEME VARIABLES --- */
         :root {
-            --bg-body: #f2f2f7; --bg-sidebar: #ffffff; --bg-toolbar: #ffffff;
-            --text-main: #000000; --text-sec: #666666; --border: #ccc;
-            --item-hover: #f0f0f5; --input-bg: #e5e5ea; --modal-bg: #ffffff;
-            --accent: #007aff; --viewport-bg: #444;
+            --bg-body: #f2f2f7;
+            --bg-sidebar: #ffffff;
+            --bg-toolbar: #ffffff;
+            --text-main: #000000;
+            --text-sec: #666666;
+            --border: #ccc;
+            --item-hover: #f0f0f5;
+            --input-bg: #e5e5ea;
+            --modal-bg: #ffffff;
+            --accent: #007aff;
+            --viewport-bg: #444;
         }
+
         [data-theme="dark"] {
-            --bg-body: #000000; --bg-sidebar: #1c1c1e; --bg-toolbar: #1c1c1e;
-            --text-main: #ffffff; --text-sec: #aaaaaa; --border: #38383a;
-            --item-hover: #2c2c2e; --input-bg: #2c2c2e; --modal-bg: #2c2c2e;
+            --bg-body: #000000;
+            --bg-sidebar: #1c1c1e;
+            --bg-toolbar: #1c1c1e;
+            --text-main: #ffffff;
+            --text-sec: #aaaaaa;
+            --border: #38383a;
+            --item-hover: #2c2c2e;
+            --input-bg: #2c2c2e;
+            --modal-bg: #2c2c2e;
             --accent: #0a84ff;
         }
 
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: var(--bg-body); color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            display: flex; flex-direction: column; overflow: hidden;
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             overscroll-behavior-y: none;
         }
 
         /* --- MAIN MENU --- */
         #mainMenu {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-body); z-index: 3000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center; transition: transform 0.3s ease-in-out;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-body);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
         }
-        #mainMenu.hidden { transform: translateY(-100%); pointer-events: none; }
-        
-        .app-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .app-title { font-size: 28px; font-weight: 800; margin-bottom: 30px; }
+
+        #mainMenu.hidden {
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
+
+        .app-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 30px;
+        }
 
         .menu-btn {
-            width: 250px; padding: 15px; margin: 8px 0;
-            background: var(--accent); color: white; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 250px;
+            padding: 15px;
+            margin: 8px 0;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
-        .menu-btn.secondary { background: var(--input-bg); color: var(--text-main); }
-        .version-footer { position: absolute; bottom: 50px; font-size: 13px; color: var(--text-sec); opacity: 0.7; }
+
+        .menu-btn.secondary {
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .version-footer {
+            position: absolute;
+            bottom: 50px;
+            font-size: 13px;
+            color: var(--text-sec);
+            opacity: 0.7;
+        }
 
         #settingsPanel {
-            display: none; flex-direction: column; gap: 15px; 
-            background: var(--bg-sidebar); padding: 20px; border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2); margin-top: 20px; width: 280px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            background: var(--bg-sidebar);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            width: 280px;
             border: 1px solid var(--border);
         }
+
         .theme-opt {
-            display: flex; justify-content: space-between; padding: 10px; 
-            background: var(--input-bg); border-radius: 8px; cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: var(--input-bg);
+            border-radius: 8px;
+            cursor: pointer;
         }
-        .theme-opt.selected { border: 2px solid var(--accent); }
+
+        .theme-opt.selected {
+            border: 2px solid var(--accent);
+        }
 
         /* --- APP LAYOUT --- */
-        #mainContainer { display: flex; flex-grow: 1; overflow: hidden; height: 100%; position: relative; }
+        #mainContainer {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
 
         #sidebar {
-            width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; flex-shrink: 0; 
-            transition: width 0.3s, transform 0.3s; z-index: 1500;
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: width 0.3s, transform 0.3s;
+            z-index: 1500;
         }
-        #sidebar.collapsed { width: 0; overflow: hidden; border: none; }
-        #sidebar.fullscreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-right: none; }
-        
+
+        #sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        #sidebar.fullscreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-right: none;
+        }
+
         #projectHeader {
-            padding: 15px 12px; background: var(--input-bg); border-bottom: 1px solid var(--border);
-            display: flex; flex-direction: column; gap: 5px;
+            padding: 15px 12px;
+            background: var(--input-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
-        #projectTitleRow { display: flex; justify-content: space-between; align-items: center; }
-        #projNameDisplay { font-weight: bold; font-size: 16px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
+
+        #projectTitleRow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #projNameDisplay {
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--accent);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         #samplesHeader {
-            padding: 8px 12px; background: var(--bg-toolbar); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sec);
-            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);
+            padding: 8px 12px;
+            background: var(--bg-toolbar);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-sec);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
         }
 
-        #sampleList { flex-grow: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+        #sampleList {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
         .sample-item {
-            padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px;
-            display: flex; justify-content: space-between; align-items: center; color: var(--text-main);
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-main);
         }
-        .sample-item:hover { background: var(--item-hover); }
-        .sample-item.active { background: var(--accent); color: white; }
-        .sample-item.active .sample-stats { color: rgba(255,255,255,0.8); }
-        .sample-info { flex-grow: 1; overflow: hidden; padding-right: 5px; }
-        .sample-stats { font-size: 11px; color: var(--text-sec); margin-top: 4px; line-height: 1.4; white-space: normal; }
-        .sample-warning { color: #ff9f0a; font-size: 10px; display: none; margin-top:2px; }
-        .no-img .sample-warning { display: block; }
 
-        .btn-icon-small { background: none; border: none; color: inherit; opacity: 0.6; font-size: 16px; padding: 6px; cursor: pointer; }
-        .btn-icon-small:hover { opacity: 1; background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .list-header {
+            padding: 8px 12px;
+            background: var(--bg-toolbar);
+            font-weight: bold;
+            font-size: 11px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
+            margin-top: -1px;
+            position: sticky;
+            top: 0;
+        }
 
-        #workArea { flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+
+        .sample-item:hover {
+            background: var(--item-hover);
+        }
+
+        .sample-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .sample-item.active .sample-stats {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .sample-info {
+            flex-grow: 1;
+            overflow: hidden;
+            padding-right: 5px;
+        }
+
+        .sample-stats {
+            font-size: 11px;
+            color: var(--text-sec);
+            margin-top: 4px;
+            line-height: 1.4;
+            white-space: normal;
+        }
+
+        .sample-warning {
+            color: #ff9f0a;
+            font-size: 10px;
+            display: none;
+            margin-top: 2px;
+        }
+
+        .no-img .sample-warning {
+            display: block;
+        }
+
+        .btn-icon-small {
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: 0.6;
+            font-size: 16px;
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        .btn-icon-small:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        #workArea {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
 
         #toolbar {
-            flex-shrink: 0; background: var(--bg-toolbar); padding: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000;
-            display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            background: var(--bg-toolbar);
+            padding: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
         }
-        .row { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .btn {
-            padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); 
-            font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 5px;
-        }
-        .btn.active { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .btn-green { background-color: #34c759; color: white; border: none; } 
-        .btn-blue { background-color: #007aff; color: white; border: none; } 
-        .btn-purple { background-color: #af52de; color: white; border: none; }
-        .btn-red { background-color: #ff3b30; color: white; border: none; }
-        .btn-calib { background-color: #ff9500; color: white; border: none; }
-        .btn-excel { background-color: #1d6f42; color: white; border: none; }
-        
-        .btn-doubt-mode { border: 2px solid #ffd60a; background: transparent; color: #b48900; }
-        [data-theme="dark"] .btn-doubt-mode { color: #ffd60a; }
-        .btn-doubt-mode.active { background: #ffd60a; color: #000; animation: pulse 2s infinite; }
 
-        .file-label { padding: 6px; border-radius: 6px; background: var(--input-bg); font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--text-main); }
-        /* Questo nasconde il brutto tasto grigio e la scritta */
-        .file-label input[type="file"] {
-        display: none;
-}
-        #zoomContainer { display: flex; align-items: center; gap: 5px; background: var(--input-bg); padding: 4px 8px; border-radius: 15px; border: 1px solid var(--border); }
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-green {
+            background-color: #34c759;
+            color: white;
+            border: none;
+        }
+
+        .btn-blue {
+            background-color: #007aff;
+            color: white;
+            border: none;
+        }
+
+        .btn-purple {
+            background-color: #af52de;
+            color: white;
+            border: none;
+        }
+
+        .btn-red {
+            background-color: #ff3b30;
+            color: white;
+            border: none;
+        }
+
+        .btn-calib {
+            background-color: #ff9500;
+            color: white;
+            border: none;
+        }
+
+        .btn-excel {
+            background-color: #1d6f42;
+            color: white;
+            border: none;
+        }
+
+        .btn-doubt-mode {
+            border: 2px solid #ffd60a;
+            background: transparent;
+            color: #b48900;
+        }
+
+        [data-theme="dark"] .btn-doubt-mode {
+            color: #ffd60a;
+        }
+
+        .btn-doubt-mode.active {
+            background: #ffd60a;
+            color: #000;
+            animation: pulse 2s infinite;
+        }
+
+        .file-label {
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        #zoomContainer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--input-bg);
+            padding: 4px 8px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+        }
+
         #stats-bar {
-            background: var(--bg-toolbar); padding: 6px; font-size: 12px; font-weight: 600;
-            border-bottom: 1px solid var(--border); text-align: center; color: var(--text-main);
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+            background: var(--bg-toolbar);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-main);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
         }
 
         #viewport {
-            flex-grow: 1; overflow: auto; position: relative; 
-            background-color: var(--viewport-bg); display: flex; 
-            touch-action: none; -webkit-overflow-scrolling: touch;
+            flex-grow: 1;
+            overflow: auto;
+            position: relative;
+            background-color: var(--viewport-bg);
+            display: flex;
+            touch-action: none;
+            -webkit-overflow-scrolling: touch;
         }
-        canvas { display: block; background: white; box-shadow: 0 0 30px rgba(0,0,0,0.5); margin: auto; }
-        
-        .mode-pan canvas { cursor: grab; }
-        .mode-draw canvas { cursor: crosshair; }
-        .mode-select canvas { cursor: pointer; }
+
+        canvas {
+            display: block;
+            background: white;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            margin: auto;
+        }
+
+        .mode-pan canvas {
+            cursor: grab;
+        }
+
+        .mode-draw canvas {
+            cursor: crosshair;
+        }
+
+        .mode-select canvas {
+            cursor: pointer;
+        }
 
         #doubtOverlayMsg {
-            position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 214, 10, 0.95); color: black; padding: 8px 20px;
-            border-radius: 20px; font-weight: bold; font-size: 13px; pointer-events: none; display: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 500; border: 1px solid #b48900;
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 214, 10, 0.95);
+            color: black;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 500;
+            border: 1px solid #b48900;
         }
 
         #noImageMsg {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: rgba(255,255,255,0.7); text-align: center; font-weight: bold; 
-            display: none; cursor: pointer; padding: 20px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            cursor: pointer;
+            padding: 20px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
         }
-        #noImageMsg:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
 
-        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
-        #modalBox { background: var(--modal-bg); color: var(--text-main); padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
-        .modal-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
-        .inp-num { padding: 8px; width: 80px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
-        .inp-sel { padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
+        #noImageMsg:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modalBox {
+            background: var(--modal-bg);
+            color: var(--text-main);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .modal-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .inp-num {
+            padding: 8px;
+            width: 80px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .inp-sel {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        /* --- HEADER LAYOUT --- */
+        #toolbar {
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-toolbar);
+            border-bottom: 1px solid var(--border);
+            height: 50px;
+        }
+
+        .header-left,
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .header-right {
+            justify-content: flex-end;
+        }
+
+        .header-center {
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--text-main);
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 40%;
+        }
+
+        /* --- DROPDOWNS --- */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: var(--modal-bg);
+            min-width: 200px;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            top: 100%;
+            margin-top: 5px;
+        }
+
+        .header-right .dropdown-content {
+            right: 0;
+        }
+
+        .dropdown-content div,
+        .dropdown-content label {
+            color: var(--text-main);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .dropdown-content div:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-content div:hover,
+        .dropdown-content label:hover {
+            background-color: var(--item-hover);
+        }
+
+        .show {
+            display: block;
+        }
+
+        /* --- TOOLS ROW --- */
+        .tools-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 8px;
+            background: var(--input-bg);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
     </style>
 </head>
+
 <body>
 
     <div id="mainMenu">
         <img src="icon.png" alt="Icon" class="app-logo">
         <div class="app-title">Hyaena</div>
-        
-        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start Session</button>
+
+        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
         <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load/Import Project</button>
         <button class="menu-btn secondary" onclick="toggleSettings()"><span>⚙️</span> Settings</button>
 
@@ -190,11 +677,11 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.21 (Beta)</div>
+        <div class="version-footer">Version 0.22.0 (Beta)</div>
     </div>
 
     <div id="mainContainer">
-        
+
         <div id="sidebar">
             <div id="projectHeader">
                 <div style="font-size:10px; color:var(--text-sec); margin-bottom:2px;">CURRENT PROJECT</div>
@@ -206,8 +693,12 @@
             <div id="samplesHeader">
                 <span>Samples</span>
                 <div style="display:flex; gap:5px;">
-                    <button class="btn btn-blue" style="padding:2px 8px; font-size:11px;" onclick="createNewSample(false)">+ New</button>
-                    <button class="btn" style="padding:2px 6px; font-size:14px;" onclick="toggleSidebarFullscreen()" title="Expand">⤢</button>
+                    <button class="btn" style="padding:2px 6px; font-size:11px;" onclick="sortSamples()"
+                        title="Sort Alphabetically">AZ</button>
+                    <button class="btn btn-blue" style="padding:2px 8px; font-size:11px;"
+                        onclick="createNewSample(false)">+ New</button>
+                    <button class="btn" style="padding:2px 6px; font-size:14px;" onclick="toggleSidebarFullscreen()"
+                        title="Expand">⤢</button>
                 </div>
             </div>
             <ul id="sampleList"></ul>
@@ -215,41 +706,82 @@
 
         <div id="workArea">
             <div id="toolbar">
-                <div class="row">
-                    <button class="btn" onclick="showMainMenu()">☰ Menu</button>
-                    <button class="btn" onclick="toggleSidebar()" title="Show/Hide List">◫ List</button>
-                    <label class="file-label">📷 Load<input type="file" id="inpFile" accept="image/*"></label>
-                    <label class="file-label">📂 Open<input type="file" id="inpProject" accept=".json" multiple></label>
-                    
-                    <button class="btn btn-blue" onclick="saveSingleSample()">💾 Sample</button>
-                    <button class="btn btn-purple" onclick="saveProject()">📚 Project</button>
-                    <button class="btn btn-green" onclick="downloadImg()">🖼️ JPG</button>
-                    <button class="btn btn-green" onclick="downloadImgWithCounts()">🖼️+📊</button>
-                    <button class="btn btn-excel" onclick="exportProjectExcel()">📊 </button>
-                </div>
-                <div class="row">
-                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calibrate</button>
-                    <div id="zoomContainer">
-                        <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
-                        <input type="range" id="zoomSlider" min="10" max="200" value="100" oninput="updateZoom(this.value)">
-                        <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
-                        <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="fitToScreen()">Fit</button>
-                        <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
+                <!-- ROW 1: HEADER (Menu | Title | Output) -->
+                <div class="header-row">
+                    <div class="header-left">
+                        <div class="dropdown">
+                            <button class="btn" onclick="toggleDropdown('menuDropdown')">≡ Menu</button>
+                            <div id="menuDropdown" class="dropdown-content">
+                                <div onclick="toggleSidebar()">◫ Show/Hide List</div>
+                                <label for="inpFile">📷 Load Image</label>
+                                <label for="inpProject">📂 Import Project</label>
+                                <div onclick="openImportModal()">📂 Batch Import Samples</div>
+                                <div onclick="saveSingleSample()">💾 Save Sample (.json)</div>
+                                <div onclick="saveProject()">📚 Save Project (.json)</div>
+                                <div onclick="showMainMenu()">❌ Close Session</div>
+                            </div>
+                        </div>
+                        <input type="file" id="inpFile" accept="image/*" style="display:none">
+                        <input type="file" id="inpProject" accept=".json" multiple style="display:none">
                     </div>
+
+                    <div class="header-center" id="headerTitle">
+                        Project_Results
+                    </div>
+
+                    <div class="header-right">
+                        <button class="btn btn-excel" onclick="openStatsModal()">📊 Stats</button>
+                        <div class="dropdown">
+                            <button class="btn btn-blue" onclick="toggleDropdown('exportDropdown')">⬇ Export ▾</button>
+                            <div id="exportDropdown" class="dropdown-content">
+                                <div onclick="exportExcel('COUNTS')">🔢 Excel (Counts)</div>
+                                <div onclick="exportExcel('STATS')">📊 Excel (Stats)</div>
+                                <div onclick="exportExcel('FULL')">📑 Excel (Complete)</div>
+                                <div style="border-top:1px solid #444; margin-top:5px"></div>
+                                <div onclick="downloadImg()">🖼️ Image (JPG)</div>
+                                <div onclick="downloadImgWithCounts()">📸 Image + Overlay</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: TOOLS (Centered) -->
+                <div class="tools-container">
+                    <button class="btn btn-calib" onclick="openCalibration()">📐 Calib</button>
+                    <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
+
+                    <div id="zoomContainer" style="background:none; border:none; padding:0;">
+                        <button class="btn btn-zoom" onclick="changeZoom(-10)">-</button>
+                        <input type="range" id="zoomSlider" min="10" max="400" value="100"
+                            oninput="updateZoom(this.value)">
+                        <button class="btn btn-zoom" onclick="changeZoom(10)">+</button>
+                        <span id="zoomLabel" style="font-size:11px; width:35px; text-align:right;">100%</span>
+                        <button class="btn" style="padding:4px 8px; font-size:11px;"
+                            onclick="fitToScreen()">Fit</button>
+                    </div>
+
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
                     <button id="btnPan" class="btn active" onclick="setMode('pan')">✋ Pan</button>
                     <button id="btnSelect" class="btn" onclick="setMode('select')">👆 Edit</button>
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
-                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt mode</button>
+                    <button id="btnDoubtMode" class="btn btn-doubt-mode" onclick="toggleDoubtMode()">⚠️ Doubt</button>
                 </div>
-                <div class="row" id="toolsRow">
-                    <button id="toolLineFs" class="btn active" onclick="setDrawTool('line_fs')" style="border-left:5px solid #ff3b30">📏 Scratches</button>
-                    <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')" style="border-left:5px solid #007aff">🔵 Sp</button>
-                    <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')" style="border-left:5px solid #ff9500">🟠 Pp</button>
-                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')" style="border-left:5px solid #555">⭕ Pit</button>
+
+                <!-- ROW 3: DRAWING TOOLS (Untouched) -->
+                <div class="row" id="toolsRow" style="padding:8px;">
+                    <button id="toolLineFs" class="btn active" onclick="setDrawTool('line_fs')"
+                        style="border-left:5px solid #ff3b30">📏 Scratches</button>
+                    <button id="toolSp" class="btn" onclick="setDrawTool('point_sp')"
+                        style="border-left:5px solid #007aff">🔵 Sp</button>
+                    <button id="toolPp" class="btn" onclick="setDrawTool('point_pp')"
+                        style="border-left:5px solid #ff9500">🟠 Pp</button>
+                    <button id="toolCircle" class="btn" onclick="setDrawTool('circle_auto')"
+                        style="border-left:5px solid #555">⭕ Auto</button>
                     <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
-                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()" style="display:none;">❓ Mark as doubt</button>
-                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️ Delete</button>
+                    <button id="btnMarkDoubt" class="btn btn-mark-doubt" onclick="markSelectedAsDoubt()"
+                        style="display:none;">❓ Mark</button>
+                    <button id="btnDelete" class="btn btn-red" onclick="deleteSelected()" style="display:none;">🗑️
+                        Del</button>
                     <button class="btn" onclick="undo()" id="btnUndo">↩ Undo</button>
                     <button class="btn" onclick="redo()" id="btnRedo">↪ Redo</button>
                 </div>
@@ -273,7 +805,10 @@
             <div class="modal-section">
                 <h4>Method 1: FOV</h4>
                 <input type="number" id="fovInput" class="inp-num" placeholder="Ex. 500">
-                <select id="fovUnit" class="inp-sel"><option value="µm">µm</option> <option value="mm">mm</option></select>
+                <select id="fovUnit" class="inp-sel">
+                    <option value="µm">µm</option>
+                    <option value="mm">mm</option>
+                </select>
                 <br><br><button class="btn btn-blue" onclick="applyFOV()">Apply</button>
             </div>
             <div class="modal-section" style="border-bottom:none;">
@@ -283,7 +818,10 @@
                 <div id="manualInputArea" style="opacity:0.5; pointer-events:none;">
                     <span id="pixelReadout" style="font-size:11px; font-weight:bold;">px: 0</span><br>
                     <input type="number" id="manInput" class="inp-num" placeholder="Dist.">
-                    <select id="manUnit" class="inp-sel"><option value="µm">µm</option> <option value="mm">mm</option></select>
+                    <select id="manUnit" class="inp-sel">
+                        <option value="µm">µm</option>
+                        <option value="mm">mm</option>
+                    </select>
                     <br><br><button class="btn btn-blue" onclick="applyManual()">Apply Manual</button>
                 </div>
             </div>
@@ -291,8 +829,97 @@
         </div>
     </div>
 
+    <!-- Batch Import Modal -->
+    <div id="importModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:4000; justify-content:center; align-items:center;">
+        <div
+            style="background:var(--modal-bg); color:var(--text-main); padding:20px; border-radius:12px; width:95%; max-width:500px; display:flex; flex-direction:column; max-height:80vh;">
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Batch Import (Staging)
+            </h3>
+            <div style="margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
+                <p style="font-size:13px; color:var(--text-sec); margin:0;">Select JSON files from any folder. They will
+                    queue here.</p>
+                <button class="btn btn-blue" style="justify-content:center;"
+                    onclick="document.getElementById('inpBatchJSON').click()">📂 Browse Files...</button>
+                <input type="file" id="inpBatchJSON" accept=".json" multiple style="display:none"
+                    onchange="handleBatchSelect(this)">
+            </div>
+
+            <div
+                style="flex-grow:1; overflow-y:auto; border:1px solid var(--border); border-radius:6px; margin-bottom:15px; background:var(--bg-sidebar);">
+                <ul id="stagedFilesList" style="list-style:none; padding:0; margin:0;">
+                    <!-- Staged items go here -->
+                </ul>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+                <button class="btn" onclick="closeImportModal()">Cancel</button>
+                <button class="btn btn-green" id="btnImportAll" onclick="importAllStaged()" disabled>✅ Import
+                    All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Custom Dialog -->
+    <div id="dialogOverlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:5000; justify-content:center; align-items:center;">
+        <div id="dialogBox"
+            style="background:var(--modal-bg); color:var(--text-main); padding:24px; border-radius:16px; width:90%; max-width:400px; box-shadow:0 15px 40px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:16px; text-align:center;">
+            <h3 id="dialogTitle" style="margin:0; font-size:20px;">Title</h3>
+            <div id="dialogMessage" style="font-size:15px; line-height:1.5; color:var(--text-sec);">Message content
+                here.</div>
+            <div id="dialogContent" style="width:100%;"></div> <!-- Container for custom inputs if needed -->
+            <div id="dialogButtons" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Stats & Export Modal -->
+    <div id="statsModalOverlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2100; justify-content:center; align-items:center;">
+        <div
+            style="background:var(--modal-bg); color:var(--text-main); padding:20px; border-radius:12px; width:95%; max-width:400px; max-height:90%; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.3); display:flex; flex-direction:column;">
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Advanced Statistics
+            </h3>
+            <div id="statsContent"
+                style="font-size:13px; line-height:1.6; flex-grow:1; overflow-y:auto; margin-bottom:15px;"></div>
+
+            <h4 style="margin:10px 0 10px 0; border-top:1px solid var(--border); padding-top:10px;">Export Data</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn btn-blue" style="justify-content:center; padding:10px;"
+                    onclick="exportExcel('COUNTS')">1. Counts Only</button>
+                <button class="btn btn-purple" style="justify-content:center; padding:10px;"
+                    onclick="exportExcel('STATS')">2. Adv. Stats Only</button>
+                <button class="btn btn-green" style="justify-content:center; padding:10px;"
+                    onclick="exportExcel('FULL')">3. Complete (All)</button>
+            </div>
+            <br>
+            <button class="btn btn-red" onclick="document.getElementById('statsModalOverlay').style.display='none'"
+                style="width:100%">Close</button>
+        </div>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+        // --- DROPDOWN LOGIC ---
+        function toggleDropdown(id) {
+            document.getElementById(id).classList.toggle("show");
+        }
+
+        // Close dropdowns if clicking outside
+        window.onclick = function (event) {
+            if (!event.target.matches('.btn') && !event.target.matches('.btn *')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
 
         function startApp() { document.getElementById('mainMenu').classList.add('hidden'); }
         function showMainMenu() { document.getElementById('mainMenu').classList.remove('hidden'); }
@@ -301,82 +928,118 @@
         function setTheme(mode) { localStorage.setItem('hyaena_theme', mode); applyTheme(mode); updateThemeUI(mode); }
         function applyTheme(mode) {
             const root = document.documentElement;
-            if (mode === 'auto') { const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; root.setAttribute('data-theme', prefersDark ? 'dark' : 'light'); } 
+            if (mode === 'auto') { const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; root.setAttribute('data-theme', prefersDark ? 'dark' : 'light'); }
             else { root.setAttribute('data-theme', mode); }
         }
-        function updateThemeUI(mode) { ['themeLight', 'themeDark', 'themeAuto'].forEach(id => { document.getElementById(id).classList.remove('selected'); }); if(mode === 'light') document.getElementById('themeLight').classList.add('selected'); else if(mode === 'dark') document.getElementById('themeDark').classList.add('selected'); else document.getElementById('themeAuto').classList.add('selected'); }
+        function updateThemeUI(mode) { ['themeLight', 'themeDark', 'themeAuto'].forEach(id => { document.getElementById(id).classList.remove('selected'); }); if (mode === 'light') document.getElementById('themeLight').classList.add('selected'); else if (mode === 'dark') document.getElementById('themeDark').classList.add('selected'); else document.getElementById('themeAuto').classList.add('selected'); }
         const savedTheme = localStorage.getItem('hyaena_theme') || 'auto'; setTheme(savedTheme);
 
-        const CATS = { 'sp': {label:'Sp', color:'#007aff'}, 'lp': {label:'Lp', color:'#af52de'}, 'g': {label:'G', color:'#000000'}, 'pp': {label:'Pp', color:'#ff9500'}, 'fs': {label:'Fs', color:'#ff3b30'}, 'cs': {label:'Cs', color:'#ffcc00'}, 'hcs': {label:'HCs', color:'#34c759'} };
+        const CATS = { 'sp': { label: 'Sp', color: '#007aff' }, 'lp': { label: 'Lp', color: '#af52de' }, 'g': { label: 'G', color: '#000000' }, 'pp': { label: 'Pp', color: '#ff9500' }, 'fs': { label: 'Fs', color: '#ff3b30' }, 'cs': { label: 'Cs', color: '#ffcc00' }, 'hcs': { label: 'HCs', color: '#34c759' } };
         const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
         const cvs = document.getElementById('cvs'); const ctx = cvs.getContext('2d'); const viewport = document.getElementById('viewport'); const statsBar = document.getElementById('stats-bar'); const zoomSlider = document.getElementById('zoomSlider'); const sampleListEl = document.getElementById('sampleList'); const projNameEl = document.getElementById('projNameDisplay'); const toolsRow = document.getElementById('toolsRow');
-        
+
         let projectSamples = []; let activeSampleId = null; let currentProjectName = "Project_Results";
-        let img = new Image(); let items = []; let redoStack = []; let currentFileName = "sample"; 
+        let img = new Image(); let items = []; let redoStack = []; let currentFileName = "sample";
         let mode = 'pan'; let activeDrawTool = 'line_fs'; let currentScale = 1; let isDoubtMode = false; let pixelsPerUnit = 1; let unitName = "px"; let isCalibrated = false;
-        let isDragging = false; let startPos = {x:0, y:0}; let panStart = {x:0, y:0}; let selectedItem = null; let dragItemStart = null; let measurePoints = []; let perpEndPos = {x:0, y:0};
+        let isDragging = false; let startPos = { x: 0, y: 0 }; let panStart = { x: 0, y: 0 }; let selectedItem = null; let dragItemStart = null; let measurePoints = []; let perpEndPos = { x: 0, y: 0 };
 
         function syncState() {
-            if(!activeSampleId) return;
+            if (!activeSampleId) return;
             const idx = projectSamples.findIndex(s => s.id === activeSampleId);
-            if(idx !== -1) {
+            if (idx !== -1) {
                 projectSamples[idx].items = JSON.parse(JSON.stringify(items));
                 projectSamples[idx].calibration = { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated };
                 const li = sampleListEl.children[idx];
-                if(li) {
-                     let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
-                     let statParts = []; STATS_ORDER.forEach(k => { if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
-                     let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data (0)";
-                     const statsDiv = li.querySelector('.sample-stats'); if(statsDiv) statsDiv.innerText = statStr;
+                if (li) {
+                    let counts = {}; STATS_ORDER.forEach(k => counts[k] = 0); items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++ });
+                    let statParts = []; STATS_ORDER.forEach(k => { if (counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
+                    let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data (0)";
+                    const statsDiv = li.querySelector('.sample-stats'); if (statsDiv) statsDiv.innerText = statStr;
                 }
             }
         }
 
-        function initNewSample(name) { return { id: Date.now().toString() + Math.random().toString().substr(2, 5), name: name, items: [], calibration: { ppu: 1, unit: 'px', calibrated: false }, }; }
+        function initNewSample(name) { return { id: Date.now().toString() + Math.random().toString().substr(2, 5), name: name, group: currentProjectName, items: [], calibration: { ppu: 1, unit: 'px', calibrated: false }, }; }
         function createNewSample(askName = true) {
             syncState(); let name = "Sample_" + (projectSamples.length + 1);
-            if(askName) { const input = prompt("Name for new sample:", name); if(!input) return; name = input; }
+            if (askName) { const input = prompt("Name for new sample:", name); if (!input) return; name = input; }
             const newSample = initNewSample(name); projectSamples.push(newSample); loadSampleIntoView(newSample.id); renderSampleList();
         }
         function renameSample(id) {
-            const sample = projectSamples.find(s => s.id === id); if(!sample) return;
+            const sample = projectSamples.find(s => s.id === id); if (!sample) return;
             const newName = prompt("Rename sample:", sample.name);
-            if(newName && newName !== sample.name) { sample.name = newName; if(activeSampleId === id) currentFileName = newName; renderSampleList(); }
+            if (newName && newName !== sample.name) { sample.name = newName; if (activeSampleId === id) currentFileName = newName; renderSampleList(); }
         }
         function deleteSample(id) {
-            if(!confirm("Are you sure you want to delete this sample?")) return;
-            const index = projectSamples.findIndex(s => s.id === id); if(index === -1) return;
+            if (!confirm("Are you sure you want to delete this sample?")) return;
+            const index = projectSamples.findIndex(s => s.id === id); if (index === -1) return;
             projectSamples.splice(index, 1);
-            if(projectSamples.length === 0) createNewSample(false); else if(activeSampleId === id) loadSampleIntoView(projectSamples[Math.max(0, index - 1)].id);
+            if (projectSamples.length === 0) createNewSample(false); else if (activeSampleId === id) loadSampleIntoView(projectSamples[Math.max(0, index - 1)].id);
             renderSampleList();
         }
-        function renameProject() { const newName = prompt("Rename Project:", currentProjectName); if(newName) { currentProjectName = newName; projNameEl.innerText = currentProjectName; } }
+        function renameProject() { const newName = prompt("Rename Project:", currentProjectName); if (newName) { currentProjectName = newName; projNameEl.innerText = currentProjectName; } }
 
         function loadSampleIntoView(id) {
             syncState(); activeSampleId = id;
-            const sample = projectSamples.find(s => s.id === id); if(!sample) return;
+            const sample = projectSamples.find(s => s.id === id); if (!sample) return;
             items = JSON.parse(JSON.stringify(sample.items)); redoStack = []; currentFileName = sample.name;
-            if(sample.calibration) { pixelsPerUnit = sample.calibration.ppu; unitName = sample.calibration.unit; isCalibrated = sample.calibration.calibrated; } else { pixelsPerUnit = 1; unitName = "px"; isCalibrated = false; }
-            
-            img = new Image(); 
+            if (sample.calibration) { pixelsPerUnit = sample.calibration.ppu; unitName = sample.calibration.unit; isCalibrated = sample.calibration.calibrated; } else { pixelsPerUnit = 1; unitName = "px"; isCalibrated = false; }
+
+            img = new Image();
             img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; fitToScreen(); redraw(); };
-            
+
             cvs.style.display = 'none';
             document.getElementById('noImageMsg').style.display = 'block';
-            document.getElementById('msgSampleName').innerText = sample.name; 
+            document.getElementById('msgSampleName').innerText = sample.name;
             statsBar.innerText = "Load photo to start.";
-            
+
             renderSampleList(); redraw();
         }
 
+        // --- SORT & DRAG-DROP ---
+        let dragSrcEl = null;
+        let dragSrcIndex = -1;
+
+
+
+
+
+
+
         function renderSampleList() {
             sampleListEl.innerHTML = '';
-            projectSamples.forEach(s => {
-                const li = document.createElement('li'); li.className = 'sample-item ' + (s.id === activeSampleId ? 'active' : ''); li.onclick = () => loadSampleIntoView(s.id);
-                let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++});
-                let statParts = []; STATS_ORDER.forEach(k => { if(counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
+            let lastGroup = null;
+
+            projectSamples.forEach((s, idx) => {
+                // Ensure group exists
+                if (!s.group) s.group = currentProjectName;
+
+                // Insert Header if group changes
+                if (s.group !== lastGroup) {
+                    const h = document.createElement('li');
+                    h.className = 'list-header';
+                    h.innerText = s.group;
+                    sampleListEl.appendChild(h);
+                    lastGroup = s.group;
+                }
+
+                const li = document.createElement('li');
+                li.className = 'sample-item ' + (s.id === activeSampleId ? 'active' : '');
+
+
+
+                li.onclick = () => loadSampleIntoView(s.id);
+
+                let counts = {};
+                STATS_ORDER.forEach(k => counts[k] = 0);
+                s.items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++ });
+
+                let statParts = [];
+                STATS_ORDER.forEach(k => { if (counts[k] > 0) statParts.push(`${CATS[k].label}:${counts[k]}`); });
+
                 let statStr = statParts.length > 0 ? statParts.join(" | ") : "No data (0)";
-                li.innerHTML = `<div class="sample-info"><div class="sample-name">${s.name}</div><div class="sample-stats">${statStr}</div><div class="sample-warning ${activeSampleId===s.id && !img.src ? 'no-img' : ''}">⚠️ No Image</div></div><div class="btn-icon-group"><button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button><button class="btn-icon-small danger" onclick="event.stopPropagation(); deleteSample('${s.id}')" title="Delete">🗑️</button></div>`;
+
+                li.innerHTML = `<div class="sample-info"><div class="sample-name">${s.name}</div><div class="sample-stats">${statStr}</div><div class="sample-warning ${activeSampleId === s.id && !img.src ? 'no-img' : ''}">⚠️ No Image</div></div><div class="btn-icon-group"><button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button><button class="btn-icon-small danger" onclick="event.stopPropagation(); deleteSample('${s.id}')" title="Delete">🗑️</button></div>`;
                 sampleListEl.appendChild(li);
             });
         }
@@ -384,202 +1047,744 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.remove('fullscreen'); document.getElementById('sidebar').classList.toggle('collapsed'); }
         function toggleSidebarFullscreen() { document.getElementById('sidebar').classList.remove('collapsed'); document.getElementById('sidebar').classList.toggle('fullscreen'); }
 
-        function saveSingleSample() { if(!img.src) { alert("No image loaded!"); return; } syncState(); const d = { imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated }, date: new Date().toISOString() }; let name = prompt("Filename for this sample:", currentFileName); if(!name) return; const b = new Blob([JSON.stringify(d)],{type:"application/json"}); const l = document.createElement('a'); l.download = name + ".json"; l.href = URL.createObjectURL(b); l.click(); }
-        function saveProject() { syncState(); if(projectSamples.length === 0) { alert("Project is empty."); return; } const projectData = { type: "hyaena_project", version: 1, name: currentProjectName, date: new Date().toISOString(), samples: projectSamples }; const b = new Blob([JSON.stringify(projectData)],{type:"application/json"}); const l = document.createElement('a'); l.download = currentProjectName + ".json"; l.href = URL.createObjectURL(b); l.click(); }
-        
-        // --- MULTI-IMPORT & LOGIC ---
-        function handleFileSelection(e) {
-            const files = Array.from(e.target.files);
-            if(files.length === 0) return;
-            if(document.getElementById('mainMenu').style.display !== 'none') { startApp(); }
+        function saveSingleSample() { if (!img.src) { alert("No image loaded!"); return; } syncState(); const d = { imageSrc: img.src, items: items, calibration: { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated }, date: new Date().toISOString() }; let name = prompt("Filename for this sample:", currentFileName); if (!name) return; const b = new Blob([JSON.stringify(d)], { type: "application/json" }); const l = document.createElement('a'); l.download = name + ".json"; l.href = URL.createObjectURL(b); l.click(); }
+        function saveProject() { syncState(); if (projectSamples.length === 0) { alert("Project is empty."); return; } const projectData = { type: "hyaena_project", version: 1, name: currentProjectName, date: new Date().toISOString(), samples: projectSamples }; const b = new Blob([JSON.stringify(projectData)], { type: "application/json" }); const l = document.createElement('a'); l.download = currentProjectName + ".json"; l.href = URL.createObjectURL(b); l.click(); }
 
-            files.forEach(file => {
-                if(file.name.endsWith('.json')) {
-                    // JSON Import
+        // --- BATCH IMPORT LOGIC ---
+        let stagedFiles = [];
+
+        function openImportModal() {
+            stagedFiles = [];
+            renderStagedList();
+            document.getElementById('importModal').style.display = 'flex';
+            // Hide Menu if open
+            if (document.getElementById('menuDropdown').classList.contains('show')) toggleDropdown('menuDropdown');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            stagedFiles = [];
+        }
+
+        function handleBatchSelect(input) {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+
+            files.forEach(f => {
+                // simple duplicate check by name (optional)
+                if (!stagedFiles.some(sf => sf.name === f.name)) {
+                    stagedFiles.push(f);
+                }
+            });
+
+            renderStagedList();
+            input.value = ''; // allow re-selecting same folder/files if needed
+        }
+
+        function renderStagedList() {
+            const listEl = document.getElementById('stagedFilesList');
+            const btnImport = document.getElementById('btnImportAll');
+            listEl.innerHTML = '';
+
+            if (stagedFiles.length === 0) {
+                listEl.innerHTML = `<li style="padding:15px; text-align:center; color:var(--text-sec); font-style:italic;">No files selected</li>`;
+                btnImport.disabled = true;
+                return;
+            }
+
+            btnImport.disabled = false;
+            stagedFiles.forEach((f, idx) => {
+                const li = document.createElement('li');
+                li.style.cssText = "padding:8px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; color:var(--text-main); font-size:13px;";
+
+                const nameSpan = document.createElement('span');
+                nameSpan.innerText = f.name;
+
+                const delBtn = document.createElement('button');
+                delBtn.innerText = "✕";
+                delBtn.className = "btn-icon-small danger";
+                delBtn.style.marginLeft = "10px";
+                delBtn.onclick = () => {
+                    stagedFiles.splice(idx, 1);
+                    renderStagedList();
+                };
+
+                li.appendChild(nameSpan);
+                li.appendChild(delBtn);
+                listEl.appendChild(li);
+            });
+        }
+
+        async function importAllStaged() {
+            if (stagedFiles.length === 0) return;
+
+            document.getElementById('importModal').style.display = 'none'; // Hide UI but keep stagedFiles data!
+
+            // 1. Read all files first
+            const fileReads = stagedFiles.map(file => {
+                return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = evt => {
                         try {
                             const data = JSON.parse(evt.target.result);
-                            if(data.type === "hyaena_project") {
-                                if(confirm("Load project? This will replace current list.")) { projectSamples = data.samples; currentProjectName = data.name || "Project"; projNameEl.innerText = currentProjectName; if(projectSamples.length > 0) loadSampleIntoView(projectSamples[0].id); else createNewSample(false); }
+                            // Normalize to sample object
+                            let s = null;
+                            if (data.type === 'hyaena_project') {
+                                // If user selected a project file by mistake in batch, take its samples
+                                s = data.samples || [];
                             } else {
-                                // Single Import
-                                const newName = file.name.replace('.json','');
-                                const newSample = initNewSample(newName);
-                                newSample.items = data.items || [];
-                                if(data.calibration) { newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; }
-                                projectSamples.push(newSample);
-                                // Don't auto-switch view on bulk import, just refresh list
-                                renderSampleList();
+                                // Single sample
+                                const name = file.name.replace('.json', '');
+                                s = initNewSample(name);
+                                s.items = data.items || [];
+                                if (data.calibration) { s.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; }
                             }
-                        } catch(err) { console.error("Error parsing JSON", err); }
+                            resolve(Array.isArray(s) ? s : [s]);
+                        } catch (e) {
+                            console.error("Error batch parsing", file.name, e);
+                            resolve([]); // Skip bad files
+                        }
                     };
                     reader.readAsText(file);
-                } else if(file.type.startsWith('image/')) {
-                    // Image Load
-                    const fname = file.name.replace(/\.[^/.]+$/, "");
-                    const currSample = projectSamples.find(s => s.id === activeSampleId);
-                    const waitingForImage = activeSampleId && (cvs.style.display === 'none');
+                });
+            });
 
-                    if(waitingForImage) {
-                        if(currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
-                        renderSampleList();
-                        // Load immediately
-                        const r = new FileReader();
-                        r.onload = evt => { 
-                            img = new Image(); 
-                            img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); redraw(); }; 
-                            img.src = evt.target.result; 
-                        };
-                        r.readAsDataURL(file);
-                    } else {
-                        // Create new sample if dragging image onto active work
-                        const newSample = initNewSample(fname); projectSamples.push(newSample); 
-                        // If it's a single image drop, switch to it. If bulk, maybe just add.
-                        // Assuming single drop for image usually.
-                        activeSampleId = newSample.id; syncState(); items = []; redoStack = []; isCalibrated = false;
-                        
-                        const r = new FileReader();
-                        r.onload = evt => { 
-                            img = new Image(); 
-                            img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); renderSampleList(); redraw(); }; 
-                            img.src = evt.target.result; 
-                        };
-                        r.readAsDataURL(file);
+            // Wait for all to be read
+            const results = await Promise.all(fileReads);
+            // Flatten array of arrays
+            const newSamples = results.flat();
+
+            if (newSamples.length === 0) { alert("No valid samples imported."); return; }
+
+            // 2. Ask User for Group (Generic Dialog)
+            const existingGroups = [...new Set(projectSamples.map(x => x.group || currentProjectName))];
+
+            const buttons = existingGroups.map(g => ({
+                label: `Add to <b>${g}</b>`,
+                class: "btn-blue",
+                onClick: () => {
+                    finalizeBatchImport(newSamples, g);
+                }
+            }));
+
+            buttons.push({
+                label: `Create <b>New Group</b>`,
+                class: "btn-green",
+                onClick: () => {
+                    const newG = prompt("Enter Name for New Group/Species:", "New_Species");
+                    if (newG) finalizeBatchImport(newSamples, newG);
+                }
+            });
+
+            buttons.push({
+                label: `Start <b>New Session</b>`,
+                class: "btn-red",
+                onClick: () => {
+                    if (confirm("This will clear the current project. Continue?")) {
+                        // Reset Project
+                        currentProjectName = "New_Project";
+                        document.getElementById('headerTitle').innerText = currentProjectName;
+                        projectSamples = [];
+                        // Import as new group (defaulting to Project Name or prompt?)
+                        // Let's ask for group name or default to "Initial_Group"
+                        const newG = prompt("Enter Name for Group/Species:", "Species_1");
+                        finalizeBatchImport(newSamples, newG || "Species_1");
                     }
                 }
             });
-            // Reset inputs
-            e.target.value = '';
+            buttons.push({ label: "Cancel", class: "", onClick: () => { } });
+
+            showCustomDialog(
+                "Batch Import",
+                `Ready to import <b>${newSamples.length}</b> samples.<br>Select target Group:`,
+                buttons
+            );
+        }
+
+        function finalizeBatchImport(samples, groupName) {
+            samples.forEach(s => {
+                s.group = groupName;
+                addSampleToProject(s);
+            });
+            renderSampleList();
+            stagedFiles = []; // Clear buffer only after success
+        }
+
+        // --- CUSTOM DIALOG HELPER ---
+        function showCustomDialog(title, message, buttons, contentNode = null) {
+            const overlay = document.getElementById('dialogOverlay');
+            document.getElementById('dialogTitle').innerText = title;
+            document.getElementById('dialogMessage').innerHTML = message; // Use innerHTML for rich text
+
+            const btnContainer = document.getElementById('dialogButtons');
+            btnContainer.innerHTML = ''; // Clear previous
+
+            const contentContainer = document.getElementById('dialogContent');
+            contentContainer.innerHTML = '';
+            if (contentNode) contentContainer.appendChild(contentNode);
+
+            buttons.forEach(btn => {
+                const b = document.createElement('button');
+                b.className = `btn ${btn.class || ''}`;
+                b.style.justifyContent = 'center';
+                b.style.padding = '12px';
+                b.innerHTML = btn.label;
+                b.onclick = () => {
+                    overlay.style.display = 'none';
+                    if (btn.onClick) btn.onClick();
+                };
+                btnContainer.appendChild(b);
+            });
+
+            overlay.style.display = 'flex';
+        }
+
+        // --- MULTI-IMPORT & LOGIC ---
+        function handleFileSelection(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            if (document.getElementById('mainMenu').style.display !== 'none') { startApp(); }
+
+            // We only process the first file if multiple selected from same input for simplicity in this logic, 
+            // but the loop supports multiple. The Dialogs act async, so let's handle one by one?
+            // For now, let's assume one main file or sequential handling. 
+            // Since dialogs are non-blocking in UI but blocking in logic flow, we process first file.
+            // A better approach for multiple files would be a queue, but let's stick to simplest.
+            const file = files[0];
+
+            if (file.name.endsWith('.json')) {
+                // JSON Import
+                const reader = new FileReader();
+                reader.onload = evt => {
+                    try {
+                        const data = JSON.parse(evt.target.result);
+                        if (data.type === "hyaena_project") {
+                            const newSamples = data.samples || [];
+                            const newProjName = data.name || "Imported_Project";
+
+                            // Tag imported samples
+                            newSamples.forEach(s => { if (!s.group) s.group = newProjName; });
+
+                            if (projectSamples.length === 0) {
+                                // Direct load if empty
+                                projectSamples = newSamples;
+                                currentProjectName = newProjName;
+                                document.getElementById('headerTitle').innerText = currentProjectName;
+                                loadSampleIntoView(projectSamples[0].id);
+                            } else {
+                                // CUSTOM DIALOG: MERGE vs REPLACE
+                                showCustomDialog(
+                                    "Import Project",
+                                    `Ready to import "${newProjName}" (${newSamples.length} samples).`,
+                                    [
+                                        {
+                                            label: "<b>MERGE (Append)</b><br><span style='font-size:11px'>Add to current list as new group</span>",
+                                            class: "btn-green",
+                                            onClick: () => {
+                                                projectSamples.forEach(s => { if (!s.group) s.group = currentProjectName; });
+                                                projectSamples = projectSamples.concat(newSamples);
+                                                renderSampleList();
+                                            }
+                                        },
+                                        {
+                                            label: "<b>REPLACE</b><br><span style='font-size:11px'>Discard current and load new</span>",
+                                            class: "btn-red",
+                                            onClick: () => {
+                                                projectSamples = newSamples;
+                                                currentProjectName = newProjName;
+                                                document.getElementById('headerTitle').innerText = currentProjectName;
+                                                loadSampleIntoView(projectSamples[0].id);
+                                            }
+                                        },
+                                        { label: "Cancel", class: "", onClick: () => { } }
+                                    ]
+                                );
+                            }
+                        } else {
+                            // Single Sample JSON Import
+                            processSingleImport(file.name.replace('.json', ''), data);
+                        }
+                    } catch (err) { console.error("Error", err); alert("Invalid JSON"); }
+                };
+                reader.readAsText(file);
+            } else if (file.type.startsWith('image/')) {
+                // Image Load -> Single Sample Creation
+                const fname = file.name.replace(/\.[^/.]+$/, "");
+                const currSample = projectSamples.find(s => s.id === activeSampleId);
+                const waitingForImage = activeSampleId && (cvs.style.display === 'none');
+
+                if (waitingForImage) {
+                    // Just load image into active sample
+                    if (currSample && currSample.name.startsWith("Sample_")) { currSample.name = fname; currentFileName = fname; }
+                    renderSampleList();
+                    loadImageFromFile(file);
+                } else {
+                    // Create NEW sample from image -> Ask for Group
+                    const newSample = initNewSample(fname);
+
+                    // Prepare Group Selection
+                    const existingGroups = [...new Set(projectSamples.map(s => s.group || currentProjectName))];
+                    const buttons = existingGroups.map(g => ({
+                        label: `Add to <b>${g}</b>`,
+                        class: "btn-blue",
+                        onClick: () => {
+                            newSample.group = g;
+                            finalizeSingleImport(newSample, file);
+                        }
+                    }));
+
+                    buttons.push({
+                        label: `Create <b>New Group</b>`,
+                        class: "btn-green",
+                        onClick: () => {
+                            const newG = prompt("Enter Name for New Group/Species:", "New_Species");
+                            if (newG) {
+                                newSample.group = newG;
+                                finalizeSingleImport(newSample, file);
+                            }
+                        }
+                    });
+                    buttons.push({
+                        label: `Start <b>New Session</b>`,
+                        class: "btn-red",
+                        onClick: () => {
+                            if (confirm("This will clear the current project. Continue?")) {
+                                currentProjectName = "New_Project";
+                                document.getElementById('headerTitle').innerText = currentProjectName;
+                                projectSamples = [];
+                                const newG = prompt("Enter Name for Group/Species:", "Species_1");
+                                newSample.group = newG || "Species_1";
+                                finalizeSingleImport(newSample, file);
+                            }
+                        }
+                    });
+                    buttons.push({ label: "Cancel", class: "", onClick: () => { } });
+
+                    showCustomDialog(
+                        "New Sample",
+                        `Where should "${fname}" be added?`,
+                        buttons
+                    );
+                }
+            }
+            e.target.value = ''; // Reset input
+        }
+
+        // --- ADD SAMPLE HELPER (SORTING) ---
+        function addSampleToProject(sample) {
+            // Find insertion point: last item of the same group
+            let insertIdx = -1;
+            for (let i = projectSamples.length - 1; i >= 0; i--) {
+                if (projectSamples[i].group === sample.group) {
+                    insertIdx = i;
+                    break;
+                }
+            }
+
+            if (insertIdx !== -1) {
+                // Insert after the last item of the group
+                projectSamples.splice(insertIdx + 1, 0, sample);
+            } else {
+                // New group or empty list, append to end
+                projectSamples.push(sample);
+            }
+        }
+
+        function processSingleImport(name, data) {
+            // Ask for group for single JSON too
+            const newSample = initNewSample(name);
+            newSample.items = data.items || [];
+            if (data.calibration) { newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true }; }
+
+            const existingGroups = [...new Set(projectSamples.map(s => s.group || currentProjectName))];
+            const buttons = existingGroups.map(g => ({
+                label: `Add to <b>${g}</b>`,
+                class: "btn-blue",
+                onClick: () => {
+                    newSample.group = g;
+                    addSampleToProject(newSample);
+                    renderSampleList();
+                }
+            }));
+            buttons.push({
+                label: `Create <b>New Group</b>`,
+                class: "btn-green",
+                onClick: () => {
+                    const newG = prompt("Enter Name for New Group/Species:", "New_Species");
+                    if (newG) {
+                        newSample.group = newG;
+                        addSampleToProject(newSample);
+                        renderSampleList();
+                    }
+                }
+            });
+            buttons.push({
+                label: `Start <b>New Session</b>`,
+                class: "btn-red",
+                onClick: () => {
+                    if (confirm("This will clear the current project. Continue?")) {
+                        currentProjectName = "New_Project";
+                        document.getElementById('headerTitle').innerText = currentProjectName;
+                        projectSamples = [];
+                        const newG = prompt("Enter Name for Group/Species:", "Species_1");
+                        newSample.group = newG || "Species_1";
+                        addSampleToProject(newSample);
+                        renderSampleList();
+                    }
+                }
+            });
+            buttons.push({ label: "Cancel", class: "", onClick: () => { } });
+
+            showCustomDialog("Import Sample", `Import "${name}" to which group?`, buttons);
+        }
+
+        function finalizeSingleImport(sample, imgFile) {
+            addSampleToProject(sample);
+            activeSampleId = sample.id;
+            syncState();
+            items = []; redoStack = []; isCalibrated = false;
+            loadImageFromFile(imgFile);
+        }
+
+        function loadImageFromFile(file) {
+            const r = new FileReader();
+            r.onload = evt => {
+                img = new Image();
+                img.onload = () => { cvs.style.display = 'block'; cvs.width = img.width; cvs.height = img.height; document.getElementById('noImageMsg').style.display = 'none'; fitToScreen(); renderSampleList(); redraw(); };
+                img.src = evt.target.result;
+            };
+            r.readAsDataURL(file);
         }
 
         document.getElementById('inpFile').addEventListener('change', handleFileSelection);
         document.getElementById('inpProject').addEventListener('change', handleFileSelection);
 
-        function exportProjectExcel() { syncState(); if(projectSamples.length === 0) { alert("No data!"); return; } let csv = "Sample Name,Calibrated," + STATS_ORDER.map(k => CATS[k].label).join(",") + "\n"; projectSamples.forEach(s => { let counts = {}; STATS_ORDER.forEach(k => counts[k]=0); s.items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); let row = `"${s.name}",${s.calibration.calibrated ? 'Yes' : 'No'},` + STATS_ORDER.map(k => counts[k]).join(","); csv += row + "\n"; }); const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,'+encodeURI(csv); l.download = currentProjectName + ".csv"; l.click(); }
-        
-        function setMode(m) { mode = m; viewport.className = 'mode-' + m; ['btnPan', 'btnSelect'].forEach(id => document.getElementById(id).classList.remove('active')); if(m === 'pan') document.getElementById('btnPan').classList.add('active'); if(m === 'select') document.getElementById('btnSelect').classList.add('active'); if(m === 'draw') updateToolVisuals(); else document.querySelectorAll('#toolsRow .btn').forEach(b => { if(!b.id.startsWith('btn')) b.classList.remove('active'); }); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; document.getElementById('btnMarkDoubt').style.display = 'none'; document.getElementById('btnDelete').style.display = 'none'; selectedItem = null; redraw(); }
-        function setDrawTool(toolName) { if(isDoubtMode) { alert("Exit doubt mode to draw."); return; } activeDrawTool = toolName; setMode('draw'); }
-        function toggleDoubtMode() { isDoubtMode = !isDoubtMode; const btn = document.getElementById('btnDoubtMode'); const overlay = document.getElementById('doubtOverlayMsg'); if(isDoubtMode) { btn.classList.add('active'); overlay.style.display = 'block'; setMode('select'); toolsRow.style.opacity = '0.3'; toolsRow.style.pointerEvents = 'none'; } else { items.forEach(it => { if(it.doubtResolved) { it.isDoubt = false; } }); btn.classList.remove('active'); overlay.style.display = 'none'; setMode('pan'); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; } redraw(); }
-        function markSelectedAsDoubt() { if(selectedItem && selectedItem.type === 'line') { selectedItem.isDoubt = true; selectedItem.doubtResolved = false; selectedItem.catId = 'fs'; selectedItem = null; document.getElementById('btnDelete').style.display='none'; document.getElementById('btnMarkDoubt').style.display='none'; redraw(); syncState(); } }
-        function updateToolVisuals() { document.querySelectorAll('#toolsRow .btn').forEach(b => b.classList.remove('active')); const map = {'line_fs': 'toolLineFs', 'point_sp': 'toolSp', 'point_pp': 'toolPp', 'circle_auto': 'toolCircle'}; if(map[activeDrawTool]) document.getElementById(map[activeDrawTool]).classList.add('active'); }
+        // --- ADVANCED STATS & EXPORT ---
+        function getStatsFromItems(itemsList, calib) {
+            const res = { crushingIndex: 0, percLargePits: 0, anisotropy: 0, meanOrient: 0, mechIndex: 0, bgAbrasion: 0, severity: 0, psRatio: 0, pitHet: 0, scratchHet: 0, globalHet: 0 };
+            if (!itemsList || itemsList.length === 0) return res;
+
+            const isCal = calib ? calib.calibrated : false;
+            const ppu = (calib && calib.ppu) ? calib.ppu : 1;
+
+            // Dimensions for density/heterogeneity
+            let wPx = (img && img.width) ? img.width : 0;
+            let hPx = (img && img.height) ? img.height : 0;
+            if ((!wPx || !hPx) && itemsList.length > 0) {
+                // Fallback estimation
+                let maxX = 0, maxY = 0;
+                itemsList.forEach(i => { const x = i.type === 'line' ? Math.max(i.x1, i.x2) : i.x; const y = i.type === 'line' ? Math.max(i.y1, i.y2) : i.y; if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+                wPx = Math.max(1000, maxX * 1.1); hPx = Math.max(1000, maxY * 1.1);
+            }
+            if (wPx === 0) { wPx = 2000; hPx = 2000; } // Last resort
+
+            const STD_PIT_DIA = 2; const STD_SCR_W = 1.5; const ELLIPSE_F = 0.785;
+
+            const pits = itemsList.filter(i => (i.type === 'point' || i.type === 'circle') && (i.catId === 'sp' || i.catId === 'lp'));
+            const scratches = itemsList.filter(i => i.type === 'line');
+
+            // 1. Pits
+            let totalPitDia = 0;
+            let largePits = 0;
+            pits.forEach(p => {
+                let d = 0;
+                if (p.type === 'point') d = STD_PIT_DIA;
+                else d = p.r * 2;
+
+                if (isCal) d = d / ppu;
+                totalPitDia += d;
+                if (d > 4) largePits++; // >4um is Large
+            });
+            res.crushingIndex = pits.length > 0 ? (totalPitDia / pits.length) : 0;
+            res.percLargePits = pits.length > 0 ? (largePits / pits.length) * 100 : 0;
+
+            // 2. Scratches (Anisotropy & Mech Index)
+            let totalLen = 0;
+            let vectorSumX = 0; let vectorSumY = 0;
+            let totalScrArea = 0;
+
+            scratches.forEach(s => {
+                const dx = s.x2 - s.x1; const dy = s.y2 - s.y1;
+                let len = Math.hypot(dx, dy);
+                if (isCal) len = len / ppu;
+                totalLen += len;
+
+                // Anisotropy (Mean Vector Length)
+                // Double angle for orientation (0-180)
+                const angle = Math.atan2(dy, dx);
+                const angle2 = 2 * angle;
+                vectorSumX += Math.cos(angle2);
+                vectorSumY += Math.sin(angle2);
+
+                // Area for Mech Index (Length * Width)
+                let w = STD_SCR_W;
+                if (isCal) w = w / ppu;
+                totalScrArea += len * w;
+            });
+
+            if (scratches.length > 0) {
+                const R = Math.hypot(vectorSumX, vectorSumY) / scratches.length;
+                res.anisotropy = R; // 0 to 1
+                const meanAng2 = Math.atan2(vectorSumY, vectorSumX);
+                let meanAng = meanAng2 / 2;
+                meanAng = meanAng * (180 / Math.PI); // Deg
+                if (meanAng < 0) meanAng += 180;
+                res.meanOrient = meanAng;
+            }
+
+            // Mech Index: Scratches / Pits (Simple ratio or Area ratio?)
+            // Convention: N_Scratches / N_Pits or similar. 
+            // Let's use standard: (N_Scratches / (N_Scratches + N_Pits)) * 100 ??
+            // User asked for "Mech. Index". Usually related to hardness. 
+            // Implementation: Scratch Density / Pit Density? 
+            // Let's use N_Scratch / N_Pits for now as simple proxy if not specified.
+            if (pits.length > 0) res.mechIndex = scratches.length / pits.length;
+            else res.mechIndex = scratches.length;
+
+            // 3. Impact / Abrasion
+            const areaMm2 = (wPx * hPx) / (ppu * ppu) / 1000000; // px2 -> um2 -> mm2 (1mm=1000um)
+            if (areaMm2 > 0) {
+                res.bgAbrasion = totalLen / areaMm2; // mm/mm2 ?? Length(mm)/Area(mm2)? 
+                // Len is in um (if calibrated). 
+                // Let's convert Len to mm:
+                const lenMm = totalLen / 1000;
+                res.bgAbrasion = lenMm / areaMm2;
+            }
+
+            // Severity: Total Scratch Area + Total Pit Area
+            // Pit Area
+            let totalPitArea = 0;
+            pits.forEach(p => {
+                let r = 0;
+                if (p.type === 'point') r = STD_PIT_DIA / 2; else r = p.r;
+                if (isCal) r = r / ppu;
+                totalPitArea += Math.PI * r * r;
+            });
+            res.severity = totalScrArea + totalPitArea; // um2
+
+            // P/S Ratio (Area)
+            if (totalScrArea > 0) res.psRatio = totalPitArea / totalScrArea;
+
+            // 4. Heterogeneity (Grid 10x10)
+            const cw = wPx / 10; const ch = hPx / 10;
+            const gridP = Array(10).fill(0).map(() => Array(10).fill(0));
+            const gridS = Array(10).fill(0).map(() => Array(10).fill(0));
+
+            pits.forEach(p => { const x = Math.floor(p.x / cw); const y = Math.floor(p.y / ch); if (x >= 0 && x < 10 && y >= 0 && y < 10) gridP[y][x]++; });
+            scratches.forEach(s => { const cx = (s.x1 + s.x2) / 2; const cy = (s.y1 + s.y2) / 2; const x = Math.floor(cx / cw); const y = Math.floor(cy / ch); if (x >= 0 && x < 10 && y >= 0 && y < 10) gridS[y][x]++; });
+
+            function getHet(grid) {
+                let max = 0, sum = 0;
+                for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) { const v = grid[r][c]; if (v > max) max = v; sum += v; }
+                const mean = sum / 100; return mean === 0 ? 0 : max / mean;
+            }
+            res.pitHet = getHet(gridP);
+            res.scratchHet = getHet(gridS);
+
+            // Global: Combo grid
+            const gridG = Array(10).fill(0).map((_, r) => Array(10).fill(0).map((_, c) => gridP[r][c] + gridS[r][c]));
+            res.globalHet = getHet(gridG);
+
+            return res;
+        }
+
+        function openStatsModal() {
+            syncState();
+            const el = document.getElementById('statsModalOverlay');
+            const content = document.getElementById('statsContent');
+            if (!activeSampleId || !items || items.length === 0) { content.innerHTML = "No items in active sample."; }
+            else {
+                const s = projectSamples.find(x => x.id === activeSampleId);
+                const st = getStatsFromItems(s.items, s.calibration);
+
+                let h = `<table style="width:100%; border-collapse:collapse;">`;
+                const row = (l, v) => `<tr><td style="border-bottom:1px solid #444; padding:4px;">${l}</td><td style="border-bottom:1px solid #444; padding:4px; font-weight:bold;">${v}</td></tr>`;
+
+                h += row("Sample Name", s.name);
+                h += row("Calibrated", s.calibration.calibrated ? "Yes" : "No");
+                h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Microwear Stats</td></tr>`;
+                h += row("Crushing Index", st.crushingIndex.toFixed(2) + " µm");
+                h += row("% Large Pits", st.percLargePits.toFixed(1) + " %");
+                h += row("Anisotropy (R)", st.anisotropy.toFixed(3));
+                h += row("Mean Orientation", st.meanOrient.toFixed(1) + " °");
+                h += row("Mech. Index (S/P)", st.mechIndex.toFixed(2));
+                h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Spatial / Impact</td></tr>`;
+                h += row("Bg Abrasion", st.bgAbrasion.toFixed(4) + " mm/mm²");
+                h += row("Severity (Total Area)", st.severity.toFixed(0) + " µm²");
+                h += row("P/S Area Ratio", st.psRatio.toFixed(3));
+                h += row("Pit Heterogeneity", st.pitHet.toFixed(2));
+                h += row("Scratch Heterogeneity", st.scratchHet.toFixed(2));
+                h += row("Global Heterogeneity", st.globalHet.toFixed(2));
+                h += `</table>`;
+                content.innerHTML = h;
+            }
+            el.style.display = 'flex';
+        }
+
+        function exportExcel(mode) {
+            document.getElementById('statsModalOverlay').style.display = 'none';
+            if (projectSamples.length === 0) { alert("No data!"); return; }
+
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const safeName = currentProjectName.replace(/\s+/g, '_');
+            const fname = `${safeName}_${mode}_${dateStr}.csv`;
+            const sep = ";";
+            let csv = "";
+
+            // Headers
+            let headers = ["Species", "Sample Name", "Calibrated"];
+            if (mode === 'COUNTS' || mode === 'FULL') STATS_ORDER.forEach(k => headers.push(CATS[k].label));
+            if (mode === 'STATS' || mode === 'FULL') {
+                headers.push("Crushing Index (um)", "% Large Pits", "Anisotropy (R)", "Mean Orient (deg)", "Mech. Index", "Bg Abrasion (mm/mm2)", "Severity (um2)", "P/S Ratio", "Pit Het.", "Scratch Het.", "Global Het.");
+            }
+            csv += headers.join(sep) + "\n";
+
+            projectSamples.forEach(s => {
+                let row = [`"${s.group || currentProjectName}"`, `"${s.name}"`, s.calibration && s.calibration.calibrated ? 'Yes' : 'No'];
+
+                if (mode === 'COUNTS' || mode === 'FULL') {
+                    let counts = {}; STATS_ORDER.forEach(k => counts[k] = 0);
+                    s.items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++; });
+                    STATS_ORDER.forEach(k => row.push(counts[k]));
+                }
+
+                if (mode === 'STATS' || mode === 'FULL') {
+                    const st = getStatsFromItems(s.items, s.calibration);
+                    row.push(
+                        st.crushingIndex.toFixed(2), st.percLargePits.toFixed(1), st.anisotropy.toFixed(3), st.meanOrient.toFixed(1), st.mechIndex.toFixed(2),
+                        st.bgAbrasion.toFixed(4), st.severity.toFixed(0), st.psRatio.toFixed(3), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2)
+                    );
+                }
+                csv += row.join(sep) + "\n";
+            });
+
+            const l = document.createElement('a'); l.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv); l.download = fname; l.click();
+        }
+
+        function setMode(m) { mode = m; viewport.className = 'mode-' + m;['btnPan', 'btnSelect'].forEach(id => document.getElementById(id).classList.remove('active')); if (m === 'pan') document.getElementById('btnPan').classList.add('active'); if (m === 'select') document.getElementById('btnSelect').classList.add('active'); if (m === 'draw') updateToolVisuals(); else document.querySelectorAll('#toolsRow .btn').forEach(b => { if (!b.id.startsWith('btn')) b.classList.remove('active'); }); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; document.getElementById('btnMarkDoubt').style.display = 'none'; document.getElementById('btnDelete').style.display = 'none'; selectedItem = null; redraw(); }
+        function setDrawTool(toolName) { if (isDoubtMode) { alert("Exit doubt mode to draw."); return; } activeDrawTool = toolName; setMode('draw'); }
+        function toggleDoubtMode() { isDoubtMode = !isDoubtMode; const btn = document.getElementById('btnDoubtMode'); const overlay = document.getElementById('doubtOverlayMsg'); if (isDoubtMode) { btn.classList.add('active'); overlay.style.display = 'block'; setMode('select'); toolsRow.style.opacity = '0.3'; toolsRow.style.pointerEvents = 'none'; } else { items.forEach(it => { if (it.doubtResolved) { it.isDoubt = false; } }); btn.classList.remove('active'); overlay.style.display = 'none'; setMode('pan'); toolsRow.style.opacity = '1'; toolsRow.style.pointerEvents = 'auto'; } redraw(); }
+        function markSelectedAsDoubt() { if (selectedItem && selectedItem.type === 'line') { selectedItem.isDoubt = true; selectedItem.doubtResolved = false; selectedItem.catId = 'fs'; selectedItem = null; document.getElementById('btnDelete').style.display = 'none'; document.getElementById('btnMarkDoubt').style.display = 'none'; redraw(); syncState(); } }
+        function updateToolVisuals() { document.querySelectorAll('#toolsRow .btn').forEach(b => b.classList.remove('active')); const map = { 'line_fs': 'toolLineFs', 'point_sp': 'toolSp', 'point_pp': 'toolPp', 'circle_auto': 'toolCircle' }; if (map[activeDrawTool]) document.getElementById(map[activeDrawTool]).classList.add('active'); }
         function getImgPos(e) { const r = cvs.getBoundingClientRect(); let cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX; let cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY; return { x: (cx - r.left) / currentScale, y: (cy - r.top) / currentScale }; }
-        function findItemAt(x, y) { const th = 25 / currentScale; const visibleItems = isDoubtMode ? items.filter(i => i.isDoubt) : items; for(let i = visibleItems.length - 1; i >= 0; i--) { const it = visibleItems[i]; if(it.type === 'point') { if(Math.hypot(x-it.x, y-it.y) < th) return it; } else if(it.type === 'line') { const A=x-it.x1; const B=y-it.y1; const C=it.x2-it.x1; const D=it.y2-it.y1; const lenSq = C*C+D*D; let param=-1; if(lenSq!==0) param=(A*C+B*D)/lenSq; let xx,yy; if(param<0){xx=it.x1;yy=it.y1} else if(param>1){xx=it.x2;yy=it.y2} else{xx=it.x1+param*C;yy=it.y1+param*D} if(Math.hypot(x-xx,y-yy)<th) return it; } else if(it.type === 'circle') { if(Math.abs(Math.hypot(x-it.x, y-it.y)-it.r) < th) return it; } } return null; }
-        
-        viewport.addEventListener('mousedown', onDown); viewport.addEventListener('touchstart', onDown, {passive: false});
-        window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive: false});
+        function findItemAt(x, y) { const th = 25 / currentScale; const visibleItems = isDoubtMode ? items.filter(i => i.isDoubt) : items; for (let i = visibleItems.length - 1; i >= 0; i--) { const it = visibleItems[i]; if (it.type === 'point') { if (Math.hypot(x - it.x, y - it.y) < th) return it; } else if (it.type === 'line') { const A = x - it.x1; const B = y - it.y1; const C = it.x2 - it.x1; const D = it.y2 - it.y1; const lenSq = C * C + D * D; let param = -1; if (lenSq !== 0) param = (A * C + B * D) / lenSq; let xx, yy; if (param < 0) { xx = it.x1; yy = it.y1 } else if (param > 1) { xx = it.x2; yy = it.y2 } else { xx = it.x1 + param * C; yy = it.y1 + param * D } if (Math.hypot(x - xx, y - yy) < th) return it; } else if (it.type === 'circle') { if (Math.abs(Math.hypot(x - it.x, y - it.y) - it.r) < th) return it; } } return null; }
+
+        viewport.addEventListener('mousedown', onDown); viewport.addEventListener('touchstart', onDown, { passive: false });
+        window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, { passive: false });
         window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp);
 
-        function onDown(e) { if(!activeSampleId && document.getElementById('mainMenu').style.display !== 'none') return; if(!activeSampleId) return; if(e.target !== cvs && e.target !== viewport && e.target.id !== 'doubtOverlayMsg') return; if(isDoubtMode) { if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); if(selectedItem) { isDragging = true; startPos = pos; mode = 'doubt_measure'; } else { const clicked = findItemAt(pos.x, pos.y); if(clicked && clicked.isDoubt) { selectedItem = clicked; redraw(); } else { selectedItem = null; redraw(); } } return; } if(mode === 'measure') { if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); measurePoints.push(pos); redraw(); if(measurePoints.length === 2) setTimeout(finishMeasureRef, 100); return; } if(mode === 'pan') { isDragging = true; panStart = { x: e.changedTouches?e.changedTouches[0].clientX:e.clientX, y: e.changedTouches?e.changedTouches[0].clientY:e.clientY, sx: viewport.scrollLeft, sy: viewport.scrollTop }; } else if(mode === 'draw') { if(!img.src) return; if(e.cancelable) e.preventDefault(); isDragging = true; startPos = getImgPos(e); } else if(mode === 'select') { if(e.cancelable) e.preventDefault(); const pos = getImgPos(e); const clicked = findItemAt(pos.x, pos.y); if(clicked) { selectedItem = clicked; isDragging = true; startPos = pos; dragItemStart = JSON.parse(JSON.stringify(selectedItem)); document.getElementById('btnDelete').style.display = 'inline-block'; if(clicked.type === 'line' && !isDoubtMode && !clicked.isDoubt) document.getElementById('btnMarkDoubt').style.display = 'inline-block'; } else { selectedItem = null; document.getElementById('btnDelete').style.display = 'none'; document.getElementById('btnMarkDoubt').style.display = 'none'; } redraw(); } }
-        function onMove(e) { if(!isDragging) return; if(isDoubtMode && mode === 'doubt_measure') { e.preventDefault(); const curr = getImgPos(e); const p1 = {x: selectedItem.x1, y: selectedItem.y1}; const p2 = {x: selectedItem.x2, y: selectedItem.y2}; let dx = p2.x - p1.x; let dy = p2.y - p1.y; if(dx === 0 && dy === 0) perpEndPos = curr; else { const len = Math.hypot(dx, dy); const perpX = -dy / len; const perpY = dx / len; const dragX = curr.x - startPos.x; const dragY = curr.y - startPos.y; const dist = dragX * perpX + dragY * perpY; perpEndPos = { x: startPos.x + perpX * dist, y: startPos.y + perpY * dist }; } redraw(); ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(perpEndPos.x, perpEndPos.y); ctx.strokeStyle = "white"; ctx.lineWidth = 2/currentScale; ctx.stroke(); const wPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const wUm = isCalibrated ? (wPx / pixelsPerUnit) : 0; ctx.fillStyle = "white"; ctx.font = "bold "+(14/currentScale)+"px Arial"; ctx.fillText((isCalibrated ? wUm.toFixed(1)+" µm" : "No Calib"), perpEndPos.x+10, perpEndPos.y); return; } if(mode === 'pan') { e.preventDefault(); let cx = e.changedTouches?e.changedTouches[0].clientX:e.clientX; let cy = e.changedTouches?e.changedTouches[0].clientY:e.clientY; viewport.scrollLeft = panStart.sx - (cx - panStart.x); viewport.scrollTop = panStart.sy - (cy - panStart.y); } else if(mode === 'draw') { e.preventDefault(); const curr = getImgPos(e); redraw(); if(activeDrawTool.startsWith('line_')) { ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(curr.x, curr.y); ctx.strokeStyle = CATS.fs.color; ctx.lineWidth = 4/currentScale; ctx.stroke(); } else if(activeDrawTool === 'circle_auto') { const r = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); ctx.beginPath(); ctx.arc(startPos.x, startPos.y, r, 0, Math.PI*2); ctx.strokeStyle = "#888"; ctx.lineWidth = 2/currentScale; ctx.stroke(); const diaUm = getMicrometers(r*2); ctx.fillStyle="white"; ctx.font=(12/currentScale)+"px Arial"; ctx.fillText(isCalibrated?diaUm.toFixed(1)+"µm":"No Calib", curr.x, curr.y); } } else if(mode === 'select' && selectedItem) { e.preventDefault(); const curr = getImgPos(e); const dx = curr.x - startPos.x; const dy = curr.y - startPos.y; if(selectedItem.type === 'point' || selectedItem.type === 'circle') { selectedItem.x = dragItemStart.x + dx; selectedItem.y = dragItemStart.y + dy; } else { selectedItem.x1 = dragItemStart.x1 + dx; selectedItem.y1 = dragItemStart.y1 + dy; selectedItem.x2 = dragItemStart.x2 + dx; selectedItem.y2 = dragItemStart.y2 + dy; } redraw(); } }
-        function onUp(e) { if(!isDragging) return; isDragging = false; if(isDoubtMode && mode === 'doubt_measure') { if(!isCalibrated) { alert("You must calibrate first!"); redraw(); return; } const distPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const widthUm = distPx / pixelsPerUnit; if(widthUm < 5) selectedItem.catId = 'fs'; else if(widthUm < 15) selectedItem.catId = 'cs'; else selectedItem.catId = 'hcs'; selectedItem.doubtResolved = true; selectedItem.widthVal = widthUm; selectedItem = null; syncState(); redraw(); return; } if(mode === 'draw') { const curr = getImgPos(e); const dist = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); let newItem = null; if(activeDrawTool.startsWith('point_')) { newItem = { type:'point', catId: activeDrawTool==='point_sp'?'sp':'pp', x: curr.x, y: curr.y }; } else if(activeDrawTool === 'circle_auto') { if(dist > 2/currentScale) { let cat = 'sp'; if(isCalibrated) { const dia = (dist*2)/pixelsPerUnit; if(dia >= 10 && dia <= 55) cat = 'lp'; else if(dia > 55) cat = 'g'; } newItem = { type:'circle', catId: cat, x: startPos.x, y: startPos.y, r: dist }; } } else if(activeDrawTool === 'line_fs') { if(dist > 5/currentScale) { newItem = { type:'line', catId: 'fs', x1: startPos.x, y1: startPos.y, x2: curr.x, y2: curr.y }; } } if(newItem) { items.push(newItem); redoStack = []; syncState(); } redraw(); } if(mode === 'select') { syncState(); } }
-        function undo() { if(items.length > 0) { const it = items.pop(); redoStack.push(it); redraw(); syncState(); } }
-        function redo() { if(redoStack.length > 0) { const it = redoStack.pop(); items.push(it); redraw(); syncState(); } }
-        function deleteSelected() { if(selectedItem){ items=items.filter(i=>i!==selectedItem); selectedItem=null; document.getElementById('btnDelete').style.display='none'; document.getElementById('btnMarkDoubt').style.display='none'; redraw(); syncState(); } }
-        function updateZoom(val) { currentScale = val/100; document.getElementById('zoomLabel').innerText = Math.round(val)+'%'; document.getElementById('zoomSlider').value = val; if(img.src) { cvs.style.width = (img.width*currentScale)+"px"; cvs.style.height = (img.height*currentScale)+"px"; } }
+        function onDown(e) { if (!activeSampleId && document.getElementById('mainMenu').style.display !== 'none') return; if (!activeSampleId) return; if (e.target !== cvs && e.target !== viewport && e.target.id !== 'doubtOverlayMsg') return; if (isDoubtMode) { if (e.cancelable) e.preventDefault(); const pos = getImgPos(e); if (selectedItem) { isDragging = true; startPos = pos; mode = 'doubt_measure'; } else { const clicked = findItemAt(pos.x, pos.y); if (clicked && clicked.isDoubt) { selectedItem = clicked; redraw(); } else { selectedItem = null; redraw(); } } return; } if (mode === 'measure') { if (e.cancelable) e.preventDefault(); const pos = getImgPos(e); measurePoints.push(pos); redraw(); if (measurePoints.length === 2) setTimeout(finishMeasureRef, 100); return; } if (mode === 'pan') { isDragging = true; panStart = { x: e.changedTouches ? e.changedTouches[0].clientX : e.clientX, y: e.changedTouches ? e.changedTouches[0].clientY : e.clientY, sx: viewport.scrollLeft, sy: viewport.scrollTop }; } else if (mode === 'draw') { if (!img.src) return; if (e.cancelable) e.preventDefault(); isDragging = true; startPos = getImgPos(e); } else if (mode === 'select') { if (e.cancelable) e.preventDefault(); const pos = getImgPos(e); const clicked = findItemAt(pos.x, pos.y); if (clicked) { selectedItem = clicked; isDragging = true; startPos = pos; dragItemStart = JSON.parse(JSON.stringify(selectedItem)); document.getElementById('btnDelete').style.display = 'inline-block'; if (clicked.type === 'line' && !isDoubtMode && !clicked.isDoubt) document.getElementById('btnMarkDoubt').style.display = 'inline-block'; } else { selectedItem = null; document.getElementById('btnDelete').style.display = 'none'; document.getElementById('btnMarkDoubt').style.display = 'none'; } redraw(); } }
+        function onMove(e) { if (!isDragging) return; if (isDoubtMode && mode === 'doubt_measure') { e.preventDefault(); const curr = getImgPos(e); const p1 = { x: selectedItem.x1, y: selectedItem.y1 }; const p2 = { x: selectedItem.x2, y: selectedItem.y2 }; let dx = p2.x - p1.x; let dy = p2.y - p1.y; if (dx === 0 && dy === 0) perpEndPos = curr; else { const len = Math.hypot(dx, dy); const perpX = -dy / len; const perpY = dx / len; const dragX = curr.x - startPos.x; const dragY = curr.y - startPos.y; const dist = dragX * perpX + dragY * perpY; perpEndPos = { x: startPos.x + perpX * dist, y: startPos.y + perpY * dist }; } redraw(); ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(perpEndPos.x, perpEndPos.y); ctx.strokeStyle = "white"; ctx.lineWidth = 2 / currentScale; ctx.stroke(); const wPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const wUm = isCalibrated ? (wPx / pixelsPerUnit) : 0; ctx.fillStyle = "white"; ctx.font = "bold " + (14 / currentScale) + "px Arial"; ctx.fillText((isCalibrated ? wUm.toFixed(1) + " µm" : "No Calib"), perpEndPos.x + 10, perpEndPos.y); return; } if (mode === 'pan') { e.preventDefault(); let cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX; let cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY; viewport.scrollLeft = panStart.sx - (cx - panStart.x); viewport.scrollTop = panStart.sy - (cy - panStart.y); } else if (mode === 'draw') { e.preventDefault(); const curr = getImgPos(e); redraw(); if (activeDrawTool.startsWith('line_')) { ctx.beginPath(); ctx.moveTo(startPos.x, startPos.y); ctx.lineTo(curr.x, curr.y); ctx.strokeStyle = CATS.fs.color; ctx.lineWidth = 4 / currentScale; ctx.stroke(); } else if (activeDrawTool === 'circle_auto') { const r = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); ctx.beginPath(); ctx.arc(startPos.x, startPos.y, r, 0, Math.PI * 2); ctx.strokeStyle = "#888"; ctx.lineWidth = 2 / currentScale; ctx.stroke(); const diaUm = getMicrometers(r * 2); ctx.fillStyle = "white"; ctx.font = (12 / currentScale) + "px Arial"; ctx.fillText(isCalibrated ? diaUm.toFixed(1) + "µm" : "No Calib", curr.x, curr.y); } } else if (mode === 'select' && selectedItem) { e.preventDefault(); const curr = getImgPos(e); const dx = curr.x - startPos.x; const dy = curr.y - startPos.y; if (selectedItem.type === 'point' || selectedItem.type === 'circle') { selectedItem.x = dragItemStart.x + dx; selectedItem.y = dragItemStart.y + dy; } else { selectedItem.x1 = dragItemStart.x1 + dx; selectedItem.y1 = dragItemStart.y1 + dy; selectedItem.x2 = dragItemStart.x2 + dx; selectedItem.y2 = dragItemStart.y2 + dy; } redraw(); } }
+        function onUp(e) { if (!isDragging) return; isDragging = false; if (isDoubtMode && mode === 'doubt_measure') { if (!isCalibrated) { alert("You must calibrate first!"); redraw(); return; } const distPx = Math.hypot(perpEndPos.x - startPos.x, perpEndPos.y - startPos.y); const widthUm = distPx / pixelsPerUnit; if (widthUm < 5) selectedItem.catId = 'fs'; else if (widthUm < 15) selectedItem.catId = 'cs'; else selectedItem.catId = 'hcs'; selectedItem.doubtResolved = true; selectedItem.widthVal = widthUm; selectedItem = null; syncState(); redraw(); return; } if (mode === 'draw') { const curr = getImgPos(e); const dist = Math.hypot(curr.x - startPos.x, curr.y - startPos.y); let newItem = null; if (activeDrawTool.startsWith('point_')) { newItem = { type: 'point', catId: activeDrawTool === 'point_sp' ? 'sp' : 'pp', x: curr.x, y: curr.y }; } else if (activeDrawTool === 'circle_auto') { if (dist > 2 / currentScale) { let cat = 'sp'; if (isCalibrated) { const dia = (dist * 2) / pixelsPerUnit; if (dia >= 10 && dia <= 55) cat = 'lp'; else if (dia > 55) cat = 'g'; } newItem = { type: 'circle', catId: cat, x: startPos.x, y: startPos.y, r: dist }; } } else if (activeDrawTool === 'line_fs') { if (dist > 5 / currentScale) { newItem = { type: 'line', catId: 'fs', x1: startPos.x, y1: startPos.y, x2: curr.x, y2: curr.y }; } } if (newItem) { items.push(newItem); redoStack = []; syncState(); } redraw(); } if (mode === 'select') { syncState(); } }
+        function undo() { if (items.length > 0) { const it = items.pop(); redoStack.push(it); redraw(); syncState(); } }
+        function redo() { if (redoStack.length > 0) { const it = redoStack.pop(); items.push(it); redraw(); syncState(); } }
+        function deleteSelected() { if (selectedItem) { items = items.filter(i => i !== selectedItem); selectedItem = null; document.getElementById('btnDelete').style.display = 'none'; document.getElementById('btnMarkDoubt').style.display = 'none'; redraw(); syncState(); } }
+        function updateZoom(val) { currentScale = val / 100; document.getElementById('zoomLabel').innerText = Math.round(val) + '%'; document.getElementById('zoomSlider').value = val; if (img.src) { cvs.style.width = (img.width * currentScale) + "px"; cvs.style.height = (img.height * currentScale) + "px"; } }
         function changeZoom(delta) { let newVal = parseInt(zoomSlider.value) + delta; newVal = Math.max(10, Math.min(400, newVal)); updateZoom(newVal); }
-        function fitToScreen() { if(!img.src) return; const vw = viewport.clientWidth - 20; const vh = viewport.clientHeight - 20; const ratioW = vw / img.width; const ratioH = vh / img.height; const bestRatio = Math.min(ratioW, ratioH); updateZoom(Math.floor(bestRatio * 100)); viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2; viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2; }
+        function fitToScreen() { if (!img.src) return; const vw = viewport.clientWidth - 20; const vh = viewport.clientHeight - 20; const ratioW = vw / img.width; const ratioH = vh / img.height; const bestRatio = Math.min(ratioW, ratioH); updateZoom(Math.floor(bestRatio * 100)); viewport.scrollLeft = (cvs.scrollWidth - viewport.clientWidth) / 2; viewport.scrollTop = (cvs.scrollHeight - viewport.clientHeight) / 2; }
         function openCalibration() { document.getElementById('modalOverlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; setMode('pan'); }
-        function startMeasureRef() { if(!img.src) { alert("Load image first!"); return; } closeModal(); setMode('measure'); measurePoints = []; alert("Click the two ends of the scale bar."); }
-        function finishMeasureRef() { const d = Math.hypot(measurePoints[1].x - measurePoints[0].x, measurePoints[1].y - measurePoints[0].y); document.getElementById('modalOverlay').style.display='flex'; document.getElementById('manualInputArea').style.opacity='1'; document.getElementById('manualInputArea').style.pointerEvents='auto'; document.getElementById('pixelReadout').innerText = "px: " + d.toFixed(1); document.getElementById('manualInputArea').dataset.d = d; setMode('pan'); }
-        function applyManual() { const d = parseFloat(document.getElementById('manualInputArea').dataset.d); const val = parseFloat(document.getElementById('manInput').value); const unit = document.getElementById('manUnit').value; if(!img.src) { alert("Load image first!"); return; } if(!val) { alert("Enter valid number!"); return; } pixelsPerUnit = d / val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
-        function applyFOV() { const val = parseFloat(document.getElementById('fovInput').value); const unit = document.getElementById('fovUnit').value; if(!img.src) { alert("Load image first!"); return; } if(!val) { alert("Enter valid number!"); return; } pixelsPerUnit = img.width/val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
-        
-        function getMicrometers(px) { if(!isCalibrated) return 0; const val = px / pixelsPerUnit; if(unitName === 'mm') return val * 1000; if(unitName === 'm') return val * 1000000; if(unitName === 'nm') return val / 1000; return val; }
+        function startMeasureRef() { if (!img.src) { alert("Load image first!"); return; } closeModal(); setMode('measure'); measurePoints = []; alert("Click the two ends of the scale bar."); }
+        function finishMeasureRef() { const d = Math.hypot(measurePoints[1].x - measurePoints[0].x, measurePoints[1].y - measurePoints[0].y); document.getElementById('modalOverlay').style.display = 'flex'; document.getElementById('manualInputArea').style.opacity = '1'; document.getElementById('manualInputArea').style.pointerEvents = 'auto'; document.getElementById('pixelReadout').innerText = "px: " + d.toFixed(1); document.getElementById('manualInputArea').dataset.d = d; setMode('pan'); }
+        function applyManual() { const d = parseFloat(document.getElementById('manualInputArea').dataset.d); const val = parseFloat(document.getElementById('manInput').value); const unit = document.getElementById('manUnit').value; if (!img.src) { alert("Load image first!"); return; } if (!val) { alert("Enter valid number!"); return; } pixelsPerUnit = d / val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
+        function applyFOV() { const val = parseFloat(document.getElementById('fovInput').value); const unit = document.getElementById('fovUnit').value; if (!img.src) { alert("Load image first!"); return; } if (!val) { alert("Enter valid number!"); return; } pixelsPerUnit = img.width / val; unitName = unit; isCalibrated = true; syncState(); closeModal(); redraw(); alert("Calibrated!"); }
+
+        function getMicrometers(px) { if (!isCalibrated) return 0; const val = px / pixelsPerUnit; if (unitName === 'mm') return val * 1000; if (unitName === 'm') return val * 1000000; if (unitName === 'nm') return val / 1000; return val; }
 
         function redraw() {
             try {
-                ctx.clearRect(0,0, cvs.width, cvs.height);
-                if(img.src && img.width > 0) ctx.drawImage(img, 0, 0);
-                
-                let counts = {}; STATS_ORDER.forEach(k => counts[k]=0);
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+                if (img.src && img.width > 0) ctx.drawImage(img, 0, 0);
+
+                let counts = {}; STATS_ORDER.forEach(k => counts[k] = 0);
                 const baseW = Math.max(3, (img.width || 1000) / 500);
 
-                if(items && items.length > 0) {
+                if (items && items.length > 0) {
                     items.forEach(it => {
-                        if(isDoubtMode && !it.isDoubt) return; 
+                        if (isDoubtMode && !it.isDoubt) return;
                         const catId = it.catId && CATS[it.catId] ? it.catId : 'sp';
                         const conf = CATS[catId];
                         const isSel = (it === selectedItem);
-                        let drawColor = conf.color; 
-                        if(it.isDoubt) { if(it.doubtResolved) drawColor = conf.color; else drawColor = "#ffd60a"; } 
-                        if(isSel) drawColor = "#00ffff";
-                        ctx.strokeStyle = drawColor; ctx.fillStyle = drawColor; ctx.lineWidth = isSel ? baseW*2 : baseW;
+                        let drawColor = conf.color;
+                        if (it.isDoubt) { if (it.doubtResolved) drawColor = conf.color; else drawColor = "#ffd60a"; }
+                        if (isSel) drawColor = "#00ffff";
+                        ctx.strokeStyle = drawColor; ctx.fillStyle = drawColor; ctx.lineWidth = isSel ? baseW * 2 : baseW;
                         ctx.shadowBlur = (isSel || (it.isDoubt && !it.doubtResolved)) ? 10 : 0; ctx.shadowColor = "black";
-                        if(it.isDoubt && !it.doubtResolved) ctx.setLineDash([baseW*2, baseW*2]); else ctx.setLineDash([]);
-                        if(it.type === 'point') { ctx.beginPath(); ctx.arc(it.x, it.y, baseW*2.5, 0, Math.PI*2); ctx.fill(); } 
+                        if (it.isDoubt && !it.doubtResolved) ctx.setLineDash([baseW * 2, baseW * 2]); else ctx.setLineDash([]);
+                        if (it.type === 'point') { ctx.beginPath(); ctx.arc(it.x, it.y, baseW * 2.5, 0, Math.PI * 2); ctx.fill(); }
                         else if (it.type === 'line') {
                             ctx.beginPath(); ctx.moveTo(it.x1, it.y1); ctx.lineTo(it.x2, it.y2); ctx.stroke();
-                            ctx.beginPath(); ctx.arc(it.x2, it.y2, baseW*1.5, 0, Math.PI*2); ctx.fill();
-                            if(it.widthVal && (isDoubtMode || isSel)) { ctx.font = (baseW*3)+"px Arial"; ctx.fillStyle = "white"; ctx.fillText(it.widthVal.toFixed(1)+"µm", (it.x1+it.x2)/2, (it.y1+it.y2)/2); }
-                        } else if (it.type === 'circle') { ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI*2); ctx.stroke(); }
-                        if(counts[catId] !== undefined) counts[catId]++;
+                            ctx.beginPath(); ctx.arc(it.x2, it.y2, baseW * 1.5, 0, Math.PI * 2); ctx.fill();
+                            if (it.widthVal && (isDoubtMode || isSel)) { ctx.font = (baseW * 3) + "px Arial"; ctx.fillStyle = "white"; ctx.fillText(it.widthVal.toFixed(1) + "µm", (it.x1 + it.x2) / 2, (it.y1 + it.y2) / 2); }
+                        } else if (it.type === 'circle') { ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2); ctx.stroke(); }
+                        if (counts[catId] !== undefined) counts[catId]++;
                     });
                 }
-                
+
                 ctx.setLineDash([]); ctx.shadowBlur = 0;
-                if(mode === 'measure') {
+                if (mode === 'measure') {
                     ctx.fillStyle = "#ff00ff";
-                    measurePoints.forEach((p,i) => { ctx.beginPath(); ctx.arc(p.x, p.y, baseW*3, 0, Math.PI*2); ctx.fill(); ctx.font = (baseW*4)+"px Arial"; ctx.fillStyle="white"; ctx.fillText(i+1, p.x, p.y); });
+                    measurePoints.forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x, p.y, baseW * 3, 0, Math.PI * 2); ctx.fill(); ctx.font = (baseW * 4) + "px Arial"; ctx.fillStyle = "white"; ctx.fillText(i + 1, p.x, p.y); });
                 }
                 let html = isCalibrated ? `<span style="color:var(--text-sec); font-size:10px;">(1 ${unitName} = ${pixelsPerUnit.toFixed(1)}px)</span> | ` : `<span style="color:red">NO CALIB</span> | `;
                 STATS_ORDER.forEach(k => { const c = CATS[k]; html += `<span style="color:${c.color}">${c.label}: ${counts[k]}</span> | `; });
                 statsBar.innerHTML = html.slice(0, -3);
-            } catch(e) { console.error("Redraw error:", e); }
+            } catch (e) { console.error("Redraw error:", e); }
         }
 
-        function downloadImg() { 
+        function downloadImg() {
             try {
-                if(!img.src) { alert("No image loaded/visible to download."); return; }
-                const p=selectedItem; selectedItem=null; 
-                redraw(); 
-                const l=document.createElement('a'); 
-                l.download=currentFileName + "_samp.jpg"; 
-                l.href=cvs.toDataURL('image/jpeg',0.9); 
-                l.click(); 
-                selectedItem=p; 
+                if (!img.src) { alert("No image loaded/visible to download."); return; }
+                const p = selectedItem; selectedItem = null;
                 redraw();
-            } catch(e) { alert("Export Error: " + e.message); }
+                const l = document.createElement('a');
+                l.download = currentFileName + "_samp.jpg";
+                l.href = cvs.toDataURL('image/jpeg', 0.9);
+                l.click();
+                selectedItem = p;
+                redraw();
+            } catch (e) { alert("Export Error: " + e.message); }
         }
 
-        function downloadImgWithCounts() { 
+        function downloadImgWithCounts() {
             try {
-                if(!img.src) { alert("No image loaded/visible to download."); return; }
-                const p = selectedItem; selectedItem = null; 
-                ctx.clearRect(0,0, cvs.width, cvs.height); 
-                ctx.drawImage(img, 0, 0); 
-                redraw(); 
-                
-                let counts = {}; 
-                STATS_ORDER.forEach(k => counts[k]=0); 
-                if(items) items.forEach(it=>{if(counts[it.catId]!==undefined)counts[it.catId]++}); 
-                
-                let statsText = `Calib: ${isCalibrated ? 'YES' : 'NO'} | `; 
-                STATS_ORDER.forEach(k => { 
-                    if(CATS[k]) statsText += `${CATS[k].label}: ${counts[k]} | `; 
-                }); 
-                
-                const H = cvs.height; const W = cvs.width; 
-                const barH = Math.max(30, H * 0.05); 
-                ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; 
-                ctx.fillRect(0, H - barH, W, barH); 
-                ctx.fillStyle = "black"; 
-                ctx.font = "bold " + (barH * 0.5) + "px Arial"; 
-                ctx.textAlign = "center"; 
-                ctx.textBaseline = "middle"; 
-                ctx.fillText(statsText, W/2, H - barH/2); 
-                
-                const l = document.createElement('a'); 
-                l.download = currentFileName + "_count.jpg"; 
-                l.href = cvs.toDataURL('image/jpeg', 0.9); 
-                l.click(); 
-                selectedItem = p; 
-                redraw(); 
-            } catch(e) { alert("Export Error: " + e.message); }
+                if (!img.src) { alert("No image loaded/visible to download."); return; }
+                const p = selectedItem; selectedItem = null;
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+                ctx.drawImage(img, 0, 0);
+                redraw();
+
+                let counts = {};
+                STATS_ORDER.forEach(k => counts[k] = 0);
+                if (items) items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++ });
+
+                let statsText = `Calib: ${isCalibrated ? 'YES' : 'NO'} | `;
+                STATS_ORDER.forEach(k => {
+                    if (CATS[k]) statsText += `${CATS[k].label}: ${counts[k]} | `;
+                });
+
+                const H = cvs.height; const W = cvs.width;
+                const barH = Math.max(30, H * 0.05);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.fillRect(0, H - barH, W, barH);
+                ctx.fillStyle = "black";
+                ctx.font = "bold " + (barH * 0.5) + "px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(statsText, W / 2, H - barH / 2);
+
+                const l = document.createElement('a');
+                l.download = currentFileName + "_count.jpg";
+                l.href = cvs.toDataURL('image/jpeg', 0.9);
+                l.click();
+                selectedItem = p;
+                redraw();
+            } catch (e) { alert("Export Error: " + e.message); }
         }
 
         createNewSample(false);
     </script>
 </body>
+
 </html>
