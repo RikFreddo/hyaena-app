@@ -577,6 +577,30 @@
             color: var(--text-main);
         }
 
+        .inp-sel-wide {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .inp-text-wide {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            box-sizing: border-box;
+        }
+
         /* --- HEADER LAYOUT --- */
         #toolbar {
             flex-direction: column;
@@ -695,7 +719,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.23.0 (Beta)</div>
+        <div class="version-footer">Version 0.23.3 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -872,6 +896,39 @@
                 <button class="btn" onclick="closeImportModal()">Cancel</button>
                 <button class="btn btn-green" id="btnImportAll" onclick="importAllStaged()" disabled>✅ Import
                     All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Selection Modal -->
+    <div id="groupSelectionModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:4500; justify-content:center; align-items:center;">
+        <div
+            style="background:var(--modal-bg); color:var(--text-main); padding:24px; border-radius:16px; width:90%; max-width:320px; box-shadow:0 15px 40px rgba(0,0,0,0.4);">
+            <h3 style="margin-top:0; margin-bottom:20px; text-align:center;">New Sample</h3>
+
+            <div style="margin-bottom:15px; text-align:left;">
+                <label
+                    style="display:block; font-size:11px; font-weight:bold; color:var(--text-sec); margin-bottom:4px; text-transform:uppercase;">Sample
+                    Name</label>
+                <input type="text" id="newSampleNameInput" class="inp-text-wide" placeholder="Sample Name">
+            </div>
+
+            <div style="margin-bottom:25px; text-align:left;">
+                <label
+                    style="display:block; font-size:11px; font-weight:bold; color:var(--text-sec); margin-bottom:4px; text-transform:uppercase;">Assign
+                    to Group</label>
+                <select id="groupSelectDropdown" class="inp-sel-wide" onchange="handleGroupSelectChange()">
+                    <!-- Options populated by JS -->
+                </select>
+                <input type="text" id="newGroupNameInput" class="inp-text-wide" style="display:none; margin-top:8px;"
+                    placeholder="New Group Name">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn" onclick="closeGroupModal()">Cancel</button>
+                <button class="btn btn-blue" onclick="confirmCreateSample()"
+                    style="flex-grow:1; justify-content:center;">Create</button>
             </div>
         </div>
     </div>
@@ -1106,11 +1163,11 @@
         // PROJECT & SAMPLE MANAGEMENT (CRUD)
         // ==========================================================================
 
-        function initNewSample(name) {
+        function initNewSample(name, groupName) {
             return {
                 id: Date.now().toString() + Math.random().toString().substr(2, 5),
                 name: name,
-                group: currentProjectName,
+                group: groupName || currentProjectName,
                 items: [],
                 calibration: { ppu: 1, unit: 'px', calibrated: false },
             };
@@ -1118,16 +1175,112 @@
 
         function createNewSample(askName = true) {
             syncState();
-            let name = "Sample_" + (projectSamples.length + 1);
+
             if (askName) {
-                const input = prompt("Name for new sample:", name);
-                if (!input) return;
-                name = input;
+                openGroupModal();
+            } else {
+                // Legacy/Automated fallback
+                let name = "Sample_" + (projectSamples.length + 1);
+                const newSample = initNewSample(name, currentProjectName);
+                projectSamples.push(newSample);
+                loadSampleIntoView(newSample.id);
+                renderSampleList();
             }
-            const newSample = initNewSample(name);
+        }
+
+        // --- GROUP SELECTION MODAL LOGIC ---
+
+        function getExistingGroups() {
+            // Get unique groups from projectSamples, plus the currentProjectName
+            const groups = new Set();
+            if (currentProjectName) groups.add(currentProjectName);
+
+            projectSamples.forEach(s => {
+                if (s.group) groups.add(s.group);
+            });
+
+            return Array.from(groups).sort();
+        }
+
+        function openGroupModal() {
+            const modal = document.getElementById('groupSelectionModal');
+            const nameInput = document.getElementById('newSampleNameInput');
+            const groupSelect = document.getElementById('groupSelectDropdown');
+            const groupInput = document.getElementById('newGroupNameInput');
+
+            // Set default name
+            nameInput.value = "Sample_" + (projectSamples.length + 1);
+
+            // Populate groups
+            groupSelect.innerHTML = '';
+            const groups = getExistingGroups();
+
+            // Add existing groups options
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.innerText = g;
+                groupSelect.appendChild(opt);
+            });
+
+            // Add "Create New" option
+            const newOpt = document.createElement('option');
+            newOpt.value = "__NEW_GROUP__";
+            newOpt.innerText = "➕ Create New Group...";
+            groupSelect.appendChild(newOpt);
+
+            // Select current sample's group if possible, or the first available
+            const currentActive = projectSamples.find(s => s.id === activeSampleId);
+            if (currentActive && currentActive.group) {
+                groupSelect.value = currentActive.group;
+            } else if (groups.length > 0) {
+                groupSelect.value = groups[0];
+            }
+
+            // Reset UI state
+            handleGroupSelectChange();
+
+            modal.style.display = 'flex';
+            nameInput.select();
+            nameInput.focus();
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupSelectionModal').style.display = 'none';
+        }
+
+        function handleGroupSelectChange() {
+            const val = document.getElementById('groupSelectDropdown').value;
+            const inp = document.getElementById('newGroupNameInput');
+            if (val === '__NEW_GROUP__') {
+                inp.style.display = 'block';
+                inp.focus();
+            } else {
+                inp.style.display = 'none';
+            }
+        }
+
+        function confirmCreateSample() {
+            const nameInput = document.getElementById('newSampleNameInput');
+            const groupSelect = document.getElementById('groupSelectDropdown');
+            const groupInput = document.getElementById('newGroupNameInput');
+
+            const name = nameInput.value.trim() || ("Sample_" + (projectSamples.length + 1));
+            let group = groupSelect.value;
+
+            if (group === '__NEW_GROUP__') {
+                group = groupInput.value.trim();
+                if (!group) {
+                    alert("Please enter a name for the new group.");
+                    return;
+                }
+            }
+
+            const newSample = initNewSample(name, group);
             projectSamples.push(newSample);
             loadSampleIntoView(newSample.id);
             renderSampleList();
+            closeGroupModal();
         }
 
         function renameSample(id) {
@@ -1251,7 +1404,7 @@
 
             // Restore state from sample
             items = JSON.parse(JSON.stringify(sample.items));
-            redoStack = [];
+            resetHistory();
             currentFileName = sample.name;
 
             if (sample.calibration) {
@@ -2227,10 +2380,14 @@
             const th = 25 / currentScale; // Touch/Click threshold
             const visibleItems = isDoubtMode ? items.filter(i => i.isDoubt) : items;
 
-            for (let i = visibleItems.length - 1; i >= 0; i--) {
-                const it = visibleItems[i];
+            let candidates = [];
+
+            // 1. Gather all valid candidates within threshold
+            visibleItems.forEach((it, idx) => {
+                let dist = Infinity;
+
                 if (it.type === 'point') {
-                    if (Math.hypot(x - it.x, y - it.y) < th) return it;
+                    dist = Math.hypot(x - it.x, y - it.y);
                 } else if (it.type === 'line') {
                     // Distance from point to line segment
                     const A = x - it.x1;
@@ -2243,21 +2400,43 @@
                     let xx, yy;
                     if (param < 0) {
                         xx = it.x1;
-                        yy = it.y1
+                        yy = it.y1;
                     } else if (param > 1) {
                         xx = it.x2;
-                        yy = it.y2
+                        yy = it.y2;
                     } else {
                         xx = it.x1 + param * C;
-                        yy = it.y1 + param * D
+                        yy = it.y1 + param * D;
                     }
-                    if (Math.hypot(x - xx, y - yy) < th) return it;
+                    dist = Math.hypot(x - xx, y - yy);
                 } else if (it.type === 'circle') {
-                    // Check if click is near ring (within threshold of radius)
-                    if (Math.abs(Math.hypot(x - it.x, y - it.y) - it.r) < th) return it;
+                    // Distance to ring
+                    dist = Math.abs(Math.hypot(x - it.x, y - it.y) - it.r);
                 }
+
+                if (dist < th) {
+                    candidates.push({ item: it, dist: dist, index: idx }); // idx is local to visibleItems
+                }
+            });
+
+            if (candidates.length === 0) return null;
+
+            // 2. Priority Logic
+
+            // A) Check if the "absolute last" item (most recently created) is a candidate.
+            // Note: visibleItems preserves order. The last element in visibleItems is the most recent.
+            const lastItem = visibleItems[visibleItems.length - 1];
+            const isLastCandidate = candidates.find(c => c.item === lastItem);
+
+            if (isLastCandidate) {
+                return isLastCandidate.item; // Absolute priority to the most recent item immediately
             }
-            return null;
+
+            // B) Otherwise, return the specific item that is CLOSEST to the click (Precision)
+            // Sort by distance ascending
+            candidates.sort((a, b) => a.dist - b.dist);
+
+            return candidates[0].item;
         }
 
         // Attach Listeners
@@ -2479,6 +2658,7 @@
                 selectedItem = null;
                 syncState();
                 redraw();
+                saveHistory(); // ACTION: Doubt Resolve
                 return;
             }
 
@@ -2512,38 +2692,78 @@
 
                 if (newItem) {
                     items.push(newItem);
-                    redoStack = [];
                     syncState();
+                    saveHistory(); // ACTION: Draw
                 }
                 redraw();
             }
 
             // Finish Move (Select)
             if (mode === 'select') {
-                syncState();
+                if (selectedItem) {
+                    syncState();
+                    saveHistory(); // ACTION: Move/Edit
+                }
             }
         }
 
         // ==========================================================================
-        // EDITING UTILS (UNDO/REDO/DELETE)
+        // EDITING UTILS (UNDO/REDO/DELETE) w/ SNAPSHOT HISTORY
         // ==========================================================================
 
+        const MAX_HISTORY = 50;
+        let historyStack = [];
+        let historyIndex = -1;
+
+        function resetHistory() {
+            historyStack = [];
+            historyIndex = -1;
+            saveHistory(); // Auto-save initial state
+        }
+
+        function saveHistory() {
+            // 1. Truncate any "future" history (if we undid then did something new)
+            if (historyIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, historyIndex + 1);
+            }
+
+            // 2. Snapshot current state
+            const snapshot = JSON.parse(JSON.stringify(items));
+            historyStack.push(snapshot);
+            historyIndex++;
+
+            // 3. Limit size
+            if (historyStack.length > MAX_HISTORY) {
+                historyStack.shift();
+                historyIndex--;
+            }
+
+            // UI Update (Optional: Enable/Disable buttons based on index)
+        }
+
         function undo() {
-            if (items.length > 0) {
-                const it = items.pop();
-                redoStack.push(it);
-                redraw();
-                syncState();
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreStateFromHistory();
             }
         }
 
         function redo() {
-            if (redoStack.length > 0) {
-                const it = redoStack.pop();
-                items.push(it);
-                redraw();
-                syncState();
+            if (historyIndex < historyStack.length - 1) {
+                historyIndex++;
+                restoreStateFromHistory();
             }
+        }
+
+        function restoreStateFromHistory() {
+            const snapshot = historyStack[historyIndex];
+            // Deep copy back to items to avoid reference issues
+            items = JSON.parse(JSON.stringify(snapshot));
+            selectedItem = null; // Deselect on undo/redo to avoid ghost selections
+            document.getElementById('btnDelete').style.display = 'none';
+            document.getElementById('btnMarkDoubt').style.display = 'none';
+            redraw();
+            syncState();
         }
 
         function deleteSelected() {
