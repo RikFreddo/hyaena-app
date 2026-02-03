@@ -2,7 +2,7 @@
 // SERVICE WORKER CONFIGURATION
 // ==========================================================================
 
-const CACHE_NAME = "hyaena-v0.23.3";
+const CACHE_NAME = "hyaena-v0.23.4";
 const ASSETS = [
   "./",
   "./index.html",

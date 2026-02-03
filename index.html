@@ -719,7 +719,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.23.3 (Beta)</div>
+        <div class="version-footer">Version 0.23.4 (Beta)</div>
     </div>
 
     <div id="mainContainer">
@@ -977,8 +977,82 @@
         // ==========================================================================
         // INITIALIZATION & SERVICE WORKER
         // ==========================================================================
+        const CURRENT_VERSION = '0.23.4';
+
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                console.log('SW registered: ', registration);
+
+                // Check for updates manually
+                registration.update();
+
+                // Listen for new workers waiting to activate
+                registration.onupdatefound = () => {
+                    const installingWorker = registration.installing;
+                    if (installingWorker == null) return;
+
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                console.log('New content is available and will be used when all tabs for this page are closed.');
+                                showUpdateToast();
+                            } else {
+                                console.log('Content is cached for offline use.');
+                            }
+                        }
+                    };
+                };
+            }).catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+        }
+
+        function showUpdateToast() {
+            const toast = document.createElement('div');
+            toast.id = 'updateToast';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.backgroundColor = '#333';
+            toast.style.color = '#fff';
+            toast.style.padding = '12px 24px';
+            toast.style.borderRadius = '8px';
+            toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            toast.style.zIndex = '10000';
+            toast.style.display = 'flex';
+            toast.style.alignItems = 'center';
+            toast.style.gap = '15px';
+            toast.innerHTML = `
+                <span>New version available!</span>
+                <button onclick="window.location.reload()" style="
+                    background: #007aff; 
+                    color: white; 
+                    border: none; 
+                    padding: 6px 12px; 
+                    border-radius: 4px; 
+                    cursor: pointer; 
+                    font-weight: bold;">
+                    Update
+                </button>
+                <button onclick="this.parentElement.style.display='none'" style="
+                    background: transparent; 
+                    border: 1px solid #666; 
+                    color: #ccc; 
+                    padding: 6px 12px; 
+                    border-radius: 4px; 
+                    cursor: pointer;">
+                    Dismiss
+                </button>
+            `;
+            document.body.appendChild(toast);
         }
 
         // ==========================================================================
