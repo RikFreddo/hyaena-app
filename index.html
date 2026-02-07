@@ -719,7 +719,7 @@
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
-        <div class="version-footer">Version 0.23.4 (Beta)</div>
+        <div class="version-footer">Version 0.24.5 (Restored+Stats)</div>
     </div>
 
     <div id="mainContainer">
@@ -973,6 +973,11 @@
         </div>
     </div>
 
+    <!-- CORE SCRIPTS (Global Scope) -->
+    <script src="js/utils.js"></script>
+    <script src="js/statistics.js"></script>
+
+    <!-- MAIN APP LOGIC -->
     <script>
         // ==========================================================================
         // INITIALIZATION & SERVICE WORKER
@@ -1917,7 +1922,9 @@
                 reader.readAsText(file);
             } else if (file.type.startsWith('image/')) {
                 // Image Load -> Single Sample Creation
-                const fname = file.name.replace(/\.[^/.]+$/, "");
+                // Use parseFilename (Global from js/utils.js)
+                const meta = parseFilename(file.name);
+                const fname = meta.id; // Use the parsed ID as the sample name
                 const currSample = projectSamples.find(s => s.id === activeSampleId);
                 const waitingForImage = activeSampleId && (cvs.style.display === 'none');
 
@@ -2095,7 +2102,7 @@
         // STATISTICS CALCULATION
         // ==========================================================================
 
-        function getStatsFromItems(itemsList, calib) {
+        function _deprecated_getStatsFromItems(itemsList, calib) {
             const res = {
                 crushingIndex: 0,
                 percLargePits: 0,
@@ -2271,26 +2278,48 @@
                 content.innerHTML = "No items in active sample.";
             } else {
                 const s = projectSamples.find(x => x.id === activeSampleId);
-                const st = getStatsFromItems(s.items, s.calibration);
+                // Call global function from statistics.js
+                // Pass calibration object directly. In v0.23.4 's.calibration' exists.
+                // statistics.js expects {calibrated: bool, pixelsPerUnit: number} or {calibrated, ppu}
+
+                // Adapter for old structure if needed:
+                // v0.23.4 s.calibration = { ppu, unit, calibrated }
+                // statistics.js uses 'pixelsPerUnit' in one place, 'ppu' in another ??
+                // Let's check statistics.js: "let ppu = isCal ? calibration.pixelsPerUnit : 1;"
+                // Wait, I wrote statistics.js to use "pixelsPerUnit".
+                // But v0.23.4 uses "ppu".
+                // I should fix openStatsModal to pass the correct object structure.
+
+                const calibAdapter = s.calibration ? {
+                    calibrated: s.calibration.calibrated,
+                    pixelsPerUnit: s.calibration.ppu
+                } : { calibrated: false, pixelsPerUnit: 1 };
+
+                const st = getStatsFromItems(s.items, calibAdapter);
 
                 let h = `<table style="width:100%; border-collapse:collapse;">`;
                 const row = (l, v) => `<tr><td style="border-bottom:1px solid #444; padding:4px;">${l}</td><td style="border-bottom:1px solid #444; padding:4px; font-weight:bold;">${v}</td></tr>`;
 
                 h += row("Sample Name", s.name);
-                h += row("Calibrated", s.calibration.calibrated ? "Yes" : "No");
+                h += row("Calibrated", s.calibration && s.calibration.calibrated ? "Yes" : "No");
+
                 h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Microwear Stats</td></tr>`;
-                h += row("Crushing Index", st.crushingIndex.toFixed(2) + " µm");
-                h += row("% Large Pits", st.percLargePits.toFixed(1) + " %");
+                h += row("Crushing Index", st.crushingIndex.toFixed(2));
+                h += row("% Large Pits", st.percLargePits.toFixed(1) + "%");
                 h += row("Anisotropy (R)", st.anisotropy.toFixed(3));
-                h += row("Mean Orientation", st.meanOrient.toFixed(1) + " °");
-                h += row("Mech. Index (S/P)", st.mechIndex.toFixed(2));
-                h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Spatial / Impact</td></tr>`;
-                h += row("Bg Abrasion", st.bgAbrasion.toFixed(4) + " mm/mm²");
-                h += row("Severity (Total Area)", st.severity.toFixed(0) + " µm²");
-                h += row("P/S Area Ratio", st.psRatio.toFixed(3));
-                h += row("Pit Heterogeneity", st.pitHet.toFixed(2));
-                h += row("Scratch Heterogeneity", st.scratchHet.toFixed(2));
-                h += row("Global Heterogeneity", st.globalHet.toFixed(2));
+                h += row("Mean Orient", st.meanOrient.toFixed(1) + "°");
+
+                h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Severity & Indices</td></tr>`;
+                h += row("Bg Abrasion", st.bgAbrasion.toFixed(4));
+                h += row("Severity (Total)", st.severityTotal.toFixed(0));
+                h += row("Mean Feat. Sev.", st.meanFeatureSeverity.toFixed(1));
+                h += row("Durophagy Index", st.durophagyIndex.toFixed(2));
+
+                h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent);">Heterogeneity</td></tr>`;
+                h += row("Pit Het.", st.pitHet.toFixed(2));
+                h += row("Scratch Het.", st.scratchHet.toFixed(2));
+                h += row("Global Het.", st.globalHet.toFixed(2));
+
                 h += `</table>`;
                 content.innerHTML = h;
             }
@@ -2312,12 +2341,30 @@
             let csv = "";
 
             // Headers
-            let headers = ["Species", "Sample Name", "Calibrated"];
+            let headers = ["Group", "Sample Name", "Calibrated"];
+            // Define Stats Keys based on getStatsFromItems return object
+            // stats: crushingIndex, percLargePits, maxPitDiameter, severityPits, meanScratchWidth, aspectRatio, severityScratches, measuredAspectRatio, psRatio, anisotropy, vectorConsistency, meanOrient, bgAbrasion, severityTotal, severityRatio, meanFeatureSeverity, durophagyIndex, pitHet, scratchHet, globalHet
+
+            const STATS_KEYS = [
+                "crushingIndex", "percLargePits", "maxPitDiameter", "severityPits",
+                "meanScratchWidth", "aspectRatio", "severityScratches", "measuredAspectRatio",
+                "psRatio", "anisotropy", "vectorConsistency", "meanOrient",
+                "bgAbrasion", "severityTotal", "severityRatio", "meanFeatureSeverity",
+                "durophagyIndex", "pitHet", "scratchHet", "globalHet"
+            ];
+
             if (mode === 'COUNTS' || mode === 'FULL') {
                 STATS_ORDER.forEach(k => headers.push(CATS[k].label));
             }
             if (mode === 'STATS' || mode === 'FULL') {
-                headers.push("Crushing Index (um)", "% Large Pits", "Anisotropy (R)", "Mean Orient (deg)", "Mech. Index", "Bg Abrasion (mm/mm2)", "Severity (um2)", "P/S Ratio", "Pit Het.", "Scratch Het.", "Global Het.");
+                // Add robust headers
+                headers.push(
+                    "Crushing Index", "% Large Pits", "Max Pit Dia", "Severity Pits",
+                    "Mean Scratch Width", "Aspect Ratio", "Severity Scratches", "Measured AR",
+                    "P/S Ratio", "Anisotropy", "Vector Consistency", "Mean Orient",
+                    "Bg Abrasion", "Severity Total", "Severity Ratio", "Mean Feat. Sev.",
+                    "Durophagy Index", "Pit Het.", "Scratch Het.", "Global Het."
+                );
             }
             csv += headers.join(sep) + "\n";
 
@@ -2332,10 +2379,19 @@
                 }
 
                 if (mode === 'STATS' || mode === 'FULL') {
-                    const st = getStatsFromItems(s.items, s.calibration);
+                    const calibAdapter = s.calibration ? {
+                        calibrated: s.calibration.calibrated,
+                        pixelsPerUnit: s.calibration.ppu
+                    } : { calibrated: false, pixelsPerUnit: 1 };
+
+                    const st = getStatsFromItems(s.items, calibAdapter);
+
                     row.push(
-                        st.crushingIndex.toFixed(2), st.percLargePits.toFixed(1), st.anisotropy.toFixed(3), st.meanOrient.toFixed(1), st.mechIndex.toFixed(2),
-                        st.bgAbrasion.toFixed(4), st.severity.toFixed(0), st.psRatio.toFixed(3), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2)
+                        st.crushingIndex.toFixed(2), st.percLargePits.toFixed(1), st.maxPitDiameter.toFixed(2), st.severityPits.toFixed(0),
+                        st.meanScratchWidth.toFixed(2), st.aspectRatio.toFixed(2), st.severityScratches.toFixed(0), st.measuredAspectRatio.toFixed(2),
+                        st.psRatio.toFixed(3), st.anisotropy.toFixed(3), st.vectorConsistency.toFixed(3), st.meanOrient.toFixed(1),
+                        st.bgAbrasion.toFixed(4), st.severityTotal.toFixed(0), st.severityRatio.toFixed(3), st.meanFeatureSeverity.toFixed(1),
+                        st.durophagyIndex.toFixed(2), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2)
                     );
                 }
                 csv += row.join(sep) + "\n";
