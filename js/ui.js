@@ -89,6 +89,44 @@ window.showCustomDialog = function (title, message, buttons, contentNode = null)
     overlay.style.display = 'flex';
 };
 
+window.showInputDialog = function (title, message, defaultValue, callback) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = defaultValue || '';
+    input.className = 'inp-text-wide';
+    input.style.marginTop = '10px';
+    input.id = 'customDialogInput';
+
+    // Focus input when dialog opens
+    setTimeout(() => input.focus(), 100);
+
+    const buttons = [
+        {
+            label: 'Cancel',
+            onClick: () => { if (callback) callback(null); }
+        },
+        {
+            label: 'OK',
+            class: 'btn-blue',
+            onClick: () => {
+                const val = document.getElementById('customDialogInput').value;
+                if (callback) callback(val);
+            }
+        }
+    ];
+
+    showCustomDialog(title, message, buttons, input);
+
+    // Allow Enter key to submit
+    input.onkeydown = function (e) {
+        if (e.key === 'Enter') {
+            const val = this.value;
+            document.getElementById('dialogOverlay').style.display = 'none';
+            if (callback) callback(val);
+        }
+    };
+};
+
 // Stats Modal Interface
 window.openStatsModal = function () {
     syncState();

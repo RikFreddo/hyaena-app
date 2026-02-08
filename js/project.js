@@ -50,7 +50,7 @@ window.openGroupModal = function () {
     const buttons = existingGroups.map(g => ({
         label: `Add to <b>${g}</b>`,
         class: "btn-blue",
-        onClick: () => confirmCreateSample(g)
+        onClick: () => askForSampleName(g)
     }));
 
     // New Group Button
@@ -58,13 +58,9 @@ window.openGroupModal = function () {
         label: `Create <b>New Group</b>`,
         class: "btn-green",
         onClick: () => {
-            try {
-                const newG = prompt("Enter Name for New Group/Species:", "New_Species");
-                if (newG) confirmCreateSample(newG);
-            } catch (e) {
-                console.error("Error creating new group:", e);
-                alert("Error: " + e.message);
-            }
+            showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
+                if (newG) askForSampleName(newG);
+            });
         }
     });
 
@@ -77,11 +73,15 @@ window.openGroupModal = function () {
     );
 };
 
-window.confirmCreateSample = function (groupName) {
-    try {
-        let name = prompt("Enter Sample Name:", "Sample_" + (projectSamples.length + 1));
-        if (!name) return;
+window.askForSampleName = function (groupName) {
+    const defaultName = "Sample_" + (projectSamples.length + 1);
+    showInputDialog("New Sample", `Creating sample in <b>${groupName}</b>.<br>Enter Sample Name:`, defaultName, (name) => {
+        if (name) finalizeCreateSample(name, groupName);
+    });
+};
 
+window.finalizeCreateSample = function (name, groupName) {
+    try {
         if (isDuplicateName(name)) {
             alert(`Warning: A sample named "${name}" already exists.`);
         }
@@ -97,9 +97,14 @@ window.confirmCreateSample = function (groupName) {
         loadSampleIntoView(newSample.id);
         renderSampleList();
     } catch (e) {
-        console.error("Error in confirmCreateSample:", e);
+        console.error("Error in finalizeCreateSample:", e);
         alert("Creation Error: " + e.message);
     }
+};
+
+// Deprecated but kept for compatibility if called directly
+window.confirmCreateSample = function (groupName) {
+    askForSampleName(groupName);
 };
 
 window.deleteSample = function (id) {
