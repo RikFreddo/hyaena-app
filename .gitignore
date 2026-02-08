@@ -21,6 +21,3 @@ dist/
 .vscode/
 *.swp
 *.swo
-
-# Project specific
-GEMINI.md

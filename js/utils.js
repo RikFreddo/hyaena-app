@@ -102,3 +102,11 @@ function parseFilename(filename) {
         originalName: originalName
     };
 }
+
+// Expose to window for testing/module compatibility
+if (typeof window !== 'undefined') {
+    window.calculateProjection = calculateProjection;
+    window.getDistance = getDistance;
+    window.pxToUnit = pxToUnit;
+    window.parseFilename = parseFilename;
+}

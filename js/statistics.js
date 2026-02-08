@@ -215,3 +215,8 @@ function getStatsFromItems(itemsList, calibration) {
 
     return res;
 }
+
+// Expose to window for testing/module compatibility
+if (typeof window !== 'undefined') {
+    window.getStatsFromItems = getStatsFromItems;
+}
