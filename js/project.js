@@ -58,8 +58,13 @@ window.openGroupModal = function () {
         label: `Create <b>New Group</b>`,
         class: "btn-green",
         onClick: () => {
-            const newG = prompt("Enter Name for New Group/Species:", "New_Species");
-            if (newG) confirmCreateSample(newG);
+            try {
+                const newG = prompt("Enter Name for New Group/Species:", "New_Species");
+                if (newG) confirmCreateSample(newG);
+            } catch (e) {
+                console.error("Error creating new group:", e);
+                alert("Error: " + e.message);
+            }
         }
     });
 
@@ -73,23 +78,28 @@ window.openGroupModal = function () {
 };
 
 window.confirmCreateSample = function (groupName) {
-    let name = prompt("Enter Sample Name:", "Sample_" + (projectSamples.length + 1));
-    if (!name) return;
+    try {
+        let name = prompt("Enter Sample Name:", "Sample_" + (projectSamples.length + 1));
+        if (!name) return;
 
-    if (isDuplicateName(name)) {
-        alert(`Warning: A sample named "${name}" already exists.`);
+        if (isDuplicateName(name)) {
+            alert(`Warning: A sample named "${name}" already exists.`);
+        }
+
+        syncState(); // Save current before switching
+
+        const newSample = initNewSample(name);
+        newSample.group = groupName;
+
+        addSampleToProject(newSample);
+
+        // Switch to it
+        loadSampleIntoView(newSample.id);
+        renderSampleList();
+    } catch (e) {
+        console.error("Error in confirmCreateSample:", e);
+        alert("Creation Error: " + e.message);
     }
-
-    syncState(); // Save current before switching
-
-    const newSample = initNewSample(name);
-    newSample.group = groupName;
-
-    addSampleToProject(newSample);
-
-    // Switch to it
-    loadSampleIntoView(newSample.id);
-    renderSampleList();
 };
 
 window.deleteSample = function (id) {

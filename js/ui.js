@@ -140,3 +140,7 @@ window.openStatsModal = function () {
 window.closeStatsModal = function () {
     document.getElementById('statsModalOverlay').style.display = 'none';
 };
+
+window.showMainMenu = function () {
+    document.getElementById('mainMenu').style.display = 'flex';
+};
