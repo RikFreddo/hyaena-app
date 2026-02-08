@@ -16,14 +16,15 @@ window.saveSingleSample = function () {
         date: new Date().toISOString()
     };
 
-    let name = prompt("Filename for this sample:", currentFileName);
-    if (!name) return;
+    showInputDialog("Save Sample", "Filename for this sample:", currentFileName, (name) => {
+        if (!name) return;
 
-    const b = new Blob([JSON.stringify(d)], { type: "application/json" });
-    const l = document.createElement('a');
-    l.download = name + ".json";
-    l.href = URL.createObjectURL(b);
-    l.click();
+        const b = new Blob([JSON.stringify(d)], { type: "application/json" });
+        const l = document.createElement('a');
+        l.download = name + ".json";
+        l.href = URL.createObjectURL(b);
+        l.click();
+    });
 };
 
 window.saveProject = function () {
@@ -315,8 +316,9 @@ window.importAllStaged = async function () {
         label: `Create <b>New Group</b>`,
         class: "btn-green",
         onClick: () => {
-            const newG = prompt("Enter Name for New Group/Species:", "New_Species");
-            if (newG) finalizeBatchImport(newSamples, newG);
+            showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
+                if (newG) finalizeBatchImport(newSamples, newG);
+            });
         }
     });
 
@@ -329,8 +331,9 @@ window.importAllStaged = async function () {
                 currentProjectName = "New_Project";
                 document.getElementById('headerTitle').innerText = currentProjectName;
                 projectSamples = [];
-                const newG = prompt("Enter Name for Group/Species:", "Species_1");
-                finalizeBatchImport(newSamples, newG || "Species_1");
+                showInputDialog("New Project", "Enter Name for Group/Species:", "Species_1", (newG) => {
+                    finalizeBatchImport(newSamples, newG || "Species_1");
+                });
             }
         }
     });
@@ -465,11 +468,12 @@ window.handleFileSelection = function (e) {
                 label: `Create <b>New Group</b>`,
                 class: "btn-green",
                 onClick: () => {
-                    const newG = prompt("Enter Name for New Group/Species:", "New_Species");
-                    if (newG) {
-                        newSample.group = newG;
-                        finalizeSingleImport(newSample, file);
-                    }
+                    showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
+                        if (newG) {
+                            newSample.group = newG;
+                            finalizeSingleImport(newSample, file);
+                        }
+                    });
                 }
             });
             buttons.push({
@@ -480,9 +484,10 @@ window.handleFileSelection = function (e) {
                         currentProjectName = "New_Project";
                         document.getElementById('headerTitle').innerText = currentProjectName;
                         projectSamples = [];
-                        const newG = prompt("Enter Name for Group/Species:", "Species_1");
-                        newSample.group = newG || "Species_1";
-                        finalizeSingleImport(newSample, file);
+                        showInputDialog("New Project", "Enter Name for Group/Species:", "Species_1", (newG) => {
+                            newSample.group = newG || "Species_1";
+                            finalizeSingleImport(newSample, file);
+                        });
                     }
                 }
             });
@@ -524,12 +529,13 @@ window.processSingleImport = function (name, data) {
         label: `Create <b>New Group</b>`,
         class: "btn-green",
         onClick: () => {
-            const newG = prompt("Enter Name for New Group/Species:", "New_Species");
-            if (newG) {
-                newSample.group = newG;
-                addSampleToProject(newSample);
-                renderSampleList();
-            }
+            showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
+                if (newG) {
+                    newSample.group = newG;
+                    addSampleToProject(newSample);
+                    renderSampleList();
+                }
+            });
         }
     });
     buttons.push({
@@ -540,10 +546,11 @@ window.processSingleImport = function (name, data) {
                 currentProjectName = "New_Project";
                 document.getElementById('headerTitle').innerText = currentProjectName;
                 projectSamples = [];
-                const newG = prompt("Enter Name for Group/Species:", "Species_1");
-                newSample.group = newG || "Species_1";
-                addSampleToProject(newSample);
-                renderSampleList();
+                showInputDialog("New Project", "Enter Name for Group/Species:", "Species_1", (newG) => {
+                    newSample.group = newG || "Species_1";
+                    addSampleToProject(newSample);
+                    renderSampleList();
+                });
             }
         }
     });
