@@ -1,0 +1,27 @@
+{
+  "name": "hyaena-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "vitest"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RikFreddo/hyaena-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RikFreddo/hyaena-app/issues"
+  },
+  "homepage": "https://github.com/RikFreddo/hyaena-app#readme",
+  "devDependencies": {
+    "vitest": "^4.0.18"
+  }
+}
