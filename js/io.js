@@ -576,6 +576,10 @@ window.finalizeSingleImport = function (sample, imgFile) {
     loadImageFromFile(imgFile);
 };
 
+window.triggerLoadProject = function () {
+    document.getElementById('inpProject').click();
+};
+
 window.loadImageFromFile = function (file) {
     const r = new FileReader();
     r.onload = evt => {

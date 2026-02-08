@@ -1,6 +1,6 @@
 {
   "name": "hyaena-app",
-  "version": "1.0.0",
+  "version": "0.25.1",
   "description": "",
   "main": "sw.js",
   "directories": {
