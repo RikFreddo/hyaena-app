@@ -197,22 +197,35 @@ window.resumeSession = function () {
 };
 
 window.startNewSession = function () {
+    const performReset = () => {
+        // Clear State
+        window.projectSamples = [];
+        window.activeSampleId = null;
+        window.items = [];
+        window.currentProjectName = "New_Project";
+        document.getElementById('headerTitle').innerText = window.currentProjectName;
+
+        // Create first empty sample
+        window.createNewSample(false);
+
+        // Hide Menu
+        document.getElementById('mainMenu').style.display = 'none';
+    };
+
     if (window.projectSamples && window.projectSamples.length > 0) {
-        if (!confirm("This will clear the current session and start a new one. Any unsaved changes will be lost.\n\nContinue?")) {
-            return;
-        }
+        window.showCustomDialog(
+            "Start New Session?",
+            "This will start a fresh session.<br>Any unsaved progress in the current session will be lost.",
+            [
+                { label: "Cancel", onClick: null },
+                {
+                    label: "Start New Session",
+                    class: "btn-red",
+                    onClick: performReset
+                }
+            ]
+        );
+    } else {
+        performReset();
     }
-
-    // Clear State
-    window.projectSamples = [];
-    window.activeSampleId = null;
-    window.items = [];
-    window.currentProjectName = "New_Project";
-    document.getElementById('headerTitle').innerText = window.currentProjectName;
-
-    // Create first empty sample
-    window.createNewSample(false);
-
-    // Hide Menu
-    document.getElementById('mainMenu').style.display = 'none';
 };
