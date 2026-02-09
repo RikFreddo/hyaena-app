@@ -365,14 +365,11 @@ window.handleFileSelection = function (e) {
     if (document.getElementById('mainMenu').style.display !== 'none') {
         const s = document.getElementById('mainMenu').style.display;
         if (s !== 'none') {
-            // If main menu is open, we assume starting a new flow
-            // but 'startApp()' is actually just hiding the menu mainly?
-            // Let's hide it manually if needed.
             document.getElementById('mainMenu').style.display = 'none';
         }
     }
 
-    const file = files[0]; // Process first file only in this simplistic logic
+    const file = files[0];
 
     if (file.name.endsWith('.json')) {
         // JSON Import
@@ -384,17 +381,14 @@ window.handleFileSelection = function (e) {
                     const newSamples = data.samples || [];
                     const newProjName = data.name || "Imported_Project";
 
-                    // Tag imported samples
                     newSamples.forEach(s => { if (!s.group) s.group = newProjName; });
 
                     if (projectSamples.length === 0) {
-                        // Direct load if empty
                         projectSamples = newSamples;
                         currentProjectName = newProjName;
                         document.getElementById('headerTitle').innerText = currentProjectName;
                         loadSampleIntoView(projectSamples[0].id);
                     } else {
-                        // CUSTOM DIALOG: MERGE vs REPLACE
                         showCustomDialog(
                             "Import Project",
                             `Ready to import "${newProjName}" (${newSamples.length} samples).`,
@@ -423,84 +417,97 @@ window.handleFileSelection = function (e) {
                         );
                     }
                 } else {
-                    // Single Sample JSON Import
                     processSingleImport(file.name.replace('.json', ''), data);
                 }
             } catch (err) { console.error("Error", err); alert("Invalid JSON"); }
         };
         reader.readAsText(file);
     } else if (file.type.startsWith('image/')) {
-        // Image Load -> Single Sample Creation
-        // Use parseFilename (Global from js/utils.js)
+        // Image Load -> Preview -> Single Sample Creation
         const meta = parseFilename(file.name);
-        const fname = meta.id; // Use the parsed ID as the sample name
-        const currSample = projectSamples.find(s => s.id === activeSampleId);
-        const waitingForImage = activeSampleId && (cvs.style.display === 'none');
 
-        if (waitingForImage) {
-            // Just load image into active sample
-            if (currSample && (currSample.name.startsWith("Sample_") || currSample.items.length === 0)) {
-                // If generic name, adopt file name.
+        window.showImportPreviewDialog(meta, (confirmedData) => {
+            // PREVIEW CONFIRMED
+            const fname = confirmedData.id;
+            const cvs = document.getElementById('cvs');
+            const waitingForImage = activeSampleId && (cvs && cvs.style.display === 'none');
+            const currSample = projectSamples.find(s => s.id === activeSampleId);
+
+            if (waitingForImage && currSample) {
+                // Just load image into active sample (update its metadata)
                 currSample.name = fname;
                 currentFileName = fname;
+                currSample.metadata = {
+                    tooth: confirmedData.tooth,
+                    side: confirmedData.side,
+                    part: confirmedData.part,
+                    mag: confirmedData.mag,
+                    originalFilename: confirmedData.originalFilename
+                };
+                renderSampleList();
+                loadImageFromFile(file);
+            } else {
+                // New Sample Creation Flow
+                if (isDuplicateName(fname)) {
+                    alert(`Warning: The sample "${fname}" already exists.`);
+                }
+                const newSample = initNewSample(fname, confirmedData);
+                askGroupForImageImport(newSample, file);
             }
-            renderSampleList();
-            loadImageFromFile(file);
-        } else {
-            // Create NEW sample from image -> Ask for Group
-            if (isDuplicateName(fname)) {
-                alert(`Warning: The sample "${fname}" already exists.`);
-            }
-            const newSample = initNewSample(fname);
-
-            // Prepare Group Selection
-            const existingGroups = [...new Set(projectSamples.map(s => s.group || currentProjectName))];
-            const buttons = existingGroups.map(g => ({
-                label: `Add to <b>${g}</b>`,
-                class: "btn-blue",
-                onClick: () => {
-                    newSample.group = g;
-                    finalizeSingleImport(newSample, file);
-                }
-            }));
-
-            buttons.push({
-                label: `Create <b>New Group</b>`,
-                class: "btn-green",
-                onClick: () => {
-                    showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
-                        if (newG) {
-                            newSample.group = newG;
-                            finalizeSingleImport(newSample, file);
-                        }
-                    });
-                }
-            });
-            buttons.push({
-                label: `Start <b>New Session</b>`,
-                class: "btn-red",
-                onClick: () => {
-                    if (confirm("This will clear the current project. Continue?")) {
-                        currentProjectName = "New_Project";
-                        document.getElementById('headerTitle').innerText = currentProjectName;
-                        projectSamples = [];
-                        showInputDialog("New Project", "Enter Name for Group/Species:", "Species_1", (newG) => {
-                            newSample.group = newG || "Species_1";
-                            finalizeSingleImport(newSample, file);
-                        });
-                    }
-                }
-            });
-            buttons.push({ label: "Cancel", class: "", onClick: () => { } });
-
-            showCustomDialog(
-                "New Sample",
-                `Where should "${fname}" be added?`,
-                buttons
-            );
-        }
+        }, () => {
+            // Cancelled
+            e.target.value = '';
+        });
     }
     e.target.value = ''; // Reset input
+};
+
+window.askGroupForImageImport = function (newSample, file) {
+    const existingGroups = [...new Set(projectSamples.map(s => s.group || currentProjectName))];
+    const buttons = existingGroups.map(g => ({
+        label: `Add to <b>${g}</b>`,
+        class: "btn-blue",
+        onClick: () => {
+            newSample.group = g;
+            finalizeSingleImport(newSample, file);
+        }
+    }));
+
+    buttons.push({
+        label: `Create <b>New Group</b>`,
+        class: "btn-green",
+        onClick: () => {
+            showInputDialog("New Group", "Enter Name for New Group/Species:", "New_Species", (newG) => {
+                if (newG) {
+                    newSample.group = newG;
+                    finalizeSingleImport(newSample, file);
+                }
+            });
+        }
+    });
+
+    buttons.push({
+        label: `Start <b>New Session</b>`,
+        class: "btn-red",
+        onClick: () => {
+            if (confirm("This will clear the current project. Continue?")) {
+                currentProjectName = "New_Project";
+                document.getElementById('headerTitle').innerText = currentProjectName;
+                projectSamples = [];
+                showInputDialog("New Project", "Enter Name for Group/Species:", "Species_1", (newG) => {
+                    newSample.group = newG || "Species_1";
+                    finalizeSingleImport(newSample, file);
+                });
+            }
+        }
+    });
+    buttons.push({ label: "Cancel", class: "", onClick: () => { } });
+
+    showCustomDialog(
+        "New Sample",
+        `Where should "<b>${newSample.name}</b>" be added?`,
+        buttons
+    );
 };
 
 window.processSingleImport = function (name, data) {

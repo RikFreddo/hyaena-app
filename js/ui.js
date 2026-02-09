@@ -229,3 +229,65 @@ window.startNewSession = function () {
         performReset();
     }
 };
+
+window.showImportPreviewDialog = function (parsedData, onConfirm, onCancel) {
+    const container = document.createElement('div');
+    container.style.textAlign = 'left';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '10px';
+
+    const createField = (label, value, id) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<label style="font-size:11px; font-weight:bold; color:var(--text-sec); text-transform:uppercase;">${label}</label>`;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'inp-text-wide';
+        inp.value = value || '';
+        inp.id = 'preview_' + id;
+        div.appendChild(inp);
+        return div;
+    };
+
+    // Original Filename (Read-only display)
+    const fileRow = document.createElement('div');
+    fileRow.innerHTML = `<label style="font-size:11px; font-weight:bold; color:var(--text-sec);">ORIGINAL FILE</label><div style="font-family:monospace; margin-bottom:5px; word-break:break-all;">${parsedData.originalName || '-'}</div>`;
+    container.appendChild(fileRow);
+
+    // Editable Fields
+    container.appendChild(createField("Sample ID (Name)", parsedData.id, "id"));
+    container.appendChild(createField("Tooth (e.g. m1, P4)", parsedData.tooth, "tooth"));
+    container.appendChild(createField("Side (e.g. buc, ling)", parsedData.side, "side"));
+    container.appendChild(createField("Part (e.g. trig, met)", parsedData.part, "part"));
+    container.appendChild(createField("Magnification", parsedData.mag, "mag"));
+
+    const buttons = [
+        {
+            label: "Cancel",
+            onClick: onCancel
+        },
+        {
+            label: "Continue",
+            class: "btn-blue",
+            onClick: () => {
+                const newData = {
+                    id: document.getElementById('preview_id').value.trim(),
+                    tooth: document.getElementById('preview_tooth').value.trim(),
+                    side: document.getElementById('preview_side').value.trim(),
+                    part: document.getElementById('preview_part').value.trim(),
+                    mag: document.getElementById('preview_mag').value.trim(),
+                    originalFilename: parsedData.originalName
+                };
+                if (!newData.id) {
+                    alert("Sample Name cannot be empty.");
+                    return; // Prevent closing
+                }
+                // Determine logic to close dialog is handled by showCustomDialog helper usually?
+                // The helper closes on click. We need to manually invoke callback.
+                onConfirm(newData);
+            }
+        }
+    ];
+
+    showCustomDialog("Import Preview", "Verify and edit sample details:", buttons, container);
+};

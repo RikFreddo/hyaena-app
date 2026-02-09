@@ -3,14 +3,21 @@
 // PROJECT & SAMPLE MANAGEMENT
 // ==========================================================================
 
-window.initNewSample = function (name) {
+window.initNewSample = function (name, metadata = {}) {
     return {
         id: crypto.randomUUID(),
         name: name,
         date: new Date().toISOString(),
         items: [],
         calibration: { ppu: 1, unit: 'px', calibrated: false },
-        group: 'Default'
+        group: 'Default',
+        metadata: {
+            tooth: metadata.tooth || "",
+            side: metadata.side || "",
+            part: metadata.part || "",
+            mag: metadata.mag || "",
+            originalFilename: metadata.originalFilename || ""
+        }
     };
 };
 
