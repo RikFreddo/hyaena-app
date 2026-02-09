@@ -300,15 +300,18 @@
         // We attach them to window in consts.js, but imports are needed to execute the file
     </script>
 
-    <!-- We load these as regular scripts to ensure they execute in global scope context 
-         since we wrote them to attach to window. -->
-    <script src="js/consts.js" type="module"></script>
+    <!-- CORE LOGIC & UTILS -->
+    <script src="js/utils.js"></script>
+    <script src="js/consts.js"></script>
+    <script src="js/statistics.js"></script>
     <script src="js/state.js"></script>
-    <script src="js/ui.js"></script>
+
+    <!-- UI & APP LOGIC -->
     <script src="js/canvas.js"></script>
-    <script src="js/project.js"></script>
-    <script src="js/io.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/project.js"></script> <!-- Depends on consts, state -->
+    <script src="js/ui.js"></script> <!-- Depends on project, stats -->
+    <script src="js/io.js"></script> <!-- Depends on project, utils -->
+    <script src="js/app.js"></script> <!-- Initializes everything -->
 
 </body>
 

@@ -3,7 +3,7 @@
 // CONSTANTS & CONFIG
 // ==========================================================================
 
-export const CATS = {
+const CATS = {
     'sp': { label: 'Sp', color: '#007aff' },   // Small Pits
     'lp': { label: 'Lp', color: '#af52de' },   // Large Pits
     'pp': { label: 'Pp', color: '#ff9500' },   // Puncture Pits
@@ -13,7 +13,7 @@ export const CATS = {
     'g': { label: 'G', color: '#ff2d55' }    // Gouges
 };
 
-export const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
+const STATS_ORDER = ['sp', 'lp', 'pp', 'fs', 'cs', 'hcs', 'g'];
 
 // Expose to window for legacy compatibility if needed, 
 // though we aim to use ES modules where possible or keep specific globals.
