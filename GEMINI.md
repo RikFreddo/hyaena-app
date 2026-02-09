@@ -60,6 +60,9 @@ Calculates metrics based on feature geometry:
 ## 6. User Persona & Autonomy
 *   **User Role**: The user is **Atomic User**, not a professional programmer.
 *   **Agent Autonomy**: The agent is authorized and encouraged to **act autonomously** on the project (fixes, cleanup, git operations) without constant confirmation, focusing on results and stability.
-*   **Version Control**: The agent **MUST create a new git commit** every time a modification or logical task is completed.
-*   **Versioning**: The agent **MUST increment the patch version** (e.g., 0.25.4 -> 0.25.5) in `package.json`, `index.html`, and `sw.js` **with every commit/modification**. The user controls the minor version (middle number).
+*   **Versioning**: The agent **MUST increment the patch version** (e.g., 0.25.4 -> 0.25.5) in:
+    1.  `package.json`
+    2.  `sw.js` (Cache Name)
+    3.  `index.html` (**Footer in Main Menu** matches new version)
+    **with every commit/modification**. The user controls the minor version (middle number).
 *   **Testing**: The agent **MUST write a test** for every modification or new feature requested.
