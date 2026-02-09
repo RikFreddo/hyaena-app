@@ -248,8 +248,64 @@ body {
     margin-top: -1px;
     position: sticky;
     top: 0;
+    z-index: 10;
 }
 
+/* Metadata Columns (Default Hidden) */
+.meta-col {
+    display: none;
+    font-size: 13px;
+    color: var(--text-sec);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 5px;
+}
+
+/* --- FULLSCREEN SIDEBAR GRID LAYOUT --- */
+#sidebar.fullscreen .sample-item {
+    display: grid;
+    grid-template-columns: 2fr minmax(60px, 0.5fr) minmax(60px, 0.5fr) minmax(60px, 0.5fr) minmax(60px, 0.5fr) auto;
+    align-items: center;
+    gap: 15px;
+    padding: 0 15px;
+    height: 60px;
+    /* Fixed height for consistency */
+}
+
+#sidebar.fullscreen .sample-info {
+    /* Occupy first column */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#sidebar.fullscreen .sample-name {
+    font-weight: 600;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#sidebar.fullscreen .meta-col {
+    display: block;
+    /* Show columns */
+}
+
+#sidebar.fullscreen .sample-stats {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+#sidebar.fullscreen .btn-icon-group {
+    /* Last column */
+    margin-left: auto;
+}
 
 
 .sample-item:hover {

@@ -286,12 +286,20 @@ window.renderSampleList = function () {
         li.addEventListener('dragend', handleDragEnd, false);
 
         // Build HTML for the list item
+        const md = s.metadata || {};
         li.innerHTML = `
 <div class="sample-info">
 <div class="sample-name">${s.name}</div>
 <div class="sample-stats">${statStr}</div>
 <div class="sample-warning ${activeSampleId === s.id && !img.src ? 'no-img' : ''}">⚠️ No Image</div>
 </div>
+
+<!-- Metadata Columns (Visible in Fullscreen) -->
+<div class="meta-col" title="Tooth">${md.tooth || '-'}</div>
+<div class="meta-col" title="Side">${md.side || '-'}</div>
+<div class="meta-col" title="Part">${md.part || '-'}</div>
+<div class="meta-col" title="Mag">${md.mag || '-'}</div>
+
 <div class="btn-icon-group">
 <button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button>
 <button class="btn-icon-small danger" onclick="event.stopPropagation(); deleteSample('${s.id}')" title="Delete">🗑️</button>
