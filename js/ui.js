@@ -179,15 +179,21 @@ window.closeStatsModal = function () {
     document.getElementById('statsModalOverlay').style.display = 'none';
 };
 
+window.isSessionDirty = function () {
+    if (!window.projectSamples || window.projectSamples.length === 0) return false;
+    if (window.projectSamples.length > 1) return true;
+    const s = window.projectSamples[0];
+    // It's dirty if the single sample has items or has been renamed from default
+    // Assuming default name is "Sample_1" or "New Sample"? createNewSample uses "Sample_N"
+    // Let's check items count and project name
+    return (s.items.length > 0 || window.currentProjectName !== "New_Project");
+};
+
 window.showMainMenu = function () {
-    const hasSession = (window.projectSamples && window.projectSamples.length > 0);
+    const hasSession = window.isSessionDirty();
     const btnResume = document.getElementById('btnResumeSession');
     if (btnResume) {
         btnResume.style.display = hasSession ? 'flex' : 'none';
-        // Highlight Resume if active
-        if (hasSession) {
-            // Optional: visual cue
-        }
     }
     document.getElementById('mainMenu').style.display = 'flex';
 };
@@ -198,21 +204,27 @@ window.resumeSession = function () {
 
 window.startNewSession = function () {
     const performReset = () => {
-        // Clear State
-        window.projectSamples = [];
-        window.activeSampleId = null;
-        window.items = [];
-        window.currentProjectName = "New_Project";
-        document.getElementById('headerTitle').innerText = window.currentProjectName;
+        try {
+            // Clear State
+            window.projectSamples = [];
+            window.activeSampleId = null;
+            window.items = [];
+            window.currentProjectName = "New_Project";
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) headerTitle.innerText = window.currentProjectName;
 
-        // Create first empty sample
-        window.createNewSample(false);
+            // Create first empty sample
+            window.createNewSample(false);
 
-        // Hide Menu
-        document.getElementById('mainMenu').style.display = 'none';
+            // Hide Menu
+            document.getElementById('mainMenu').style.display = 'none';
+        } catch (e) {
+            console.error("Error starting new session:", e);
+            alert("Error starting session: " + e.message);
+        }
     };
 
-    if (window.projectSamples && window.projectSamples.length > 0) {
+    if (window.isSessionDirty()) {
         window.showCustomDialog(
             "Start New Session?",
             "This will start a fresh session.<br>Any unsaved progress in the current session will be lost.",
