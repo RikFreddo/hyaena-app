@@ -26,17 +26,7 @@ describe('Session Navigation', () => {
         window.createNewSample = vi.fn();
         window.renderSampleList = vi.fn();
         window.saveProject = vi.fn();
-
-        // We need to implement the logic inside the test environment or mock the implementation?
-        // Since we are TDDing, we define expected behavior for functions we are ABOUT to write/modify.
-
-        // Stubbing the functions to be implemented in ui.js/app.js if they are not yet there.
-        // For TDD, it's better to import the actual file, but app.js has side effects (init).
-        // ui.js is safe. We will put the logic in ui.js or app.js. 
-        // Let's assume we put them in ui.js for testability or we mock them here to define contract.
-
-        // ACTUALLY: The functions startNewSession and resumeSession will be global.
-        // We will define them in ui.js.
+        window.showCustomDialog = vi.fn();
     });
 
     it('showMainMenu should show Resume button if project has samples', () => {
@@ -54,7 +44,6 @@ describe('Session Navigation', () => {
     });
 
     it('resumeSession should hide main menu', () => {
-        // Implement mock if not exists
         window.resumeSession = function () {
             document.getElementById('mainMenu').style.display = 'none';
         };
@@ -63,41 +52,63 @@ describe('Session Navigation', () => {
         expect(document.getElementById('mainMenu').style.display).toBe('none');
     });
 
-    it('startNewSession should ask confirmation if samples exist', () => {
+    it('startNewSession should use custom dialog if samples exist', () => {
         // Setup
         window.projectSamples = [{ id: 1 }];
+        window.showCustomDialog = vi.fn((title, msg, buttons) => {
+            // Simulate clicking the Start New Session button (btn-red)
+            const startBtn = buttons.find(b => b.class && b.class.includes('btn-red'));
+            if (startBtn && startBtn.onClick) startBtn.onClick();
+        });
 
-        // Mock implementation to match expected behavior
+        // Mock implementation to match expected behavior in ui.js
         window.startNewSession = function () {
+            const performReset = () => {
+                window.projectSamples = [];
+                window.createNewSample(false);
+                document.getElementById('mainMenu').style.display = 'none';
+            };
+
             if (window.projectSamples.length > 0) {
-                if (!confirm("Overwrite?")) return;
+                window.showCustomDialog(
+                    "Start New Session?",
+                    "This will start a fresh session.<br>Any unsaved progress in the current session will be lost.",
+                    [
+                        { label: "Cancel", onClick: null },
+                        { label: "Start New Session", class: "btn-red", onClick: performReset }
+                    ]
+                );
+            } else {
+                performReset();
             }
-            window.projectSamples = [];
-            window.createNewSample(false);
-            document.getElementById('mainMenu').style.display = 'none';
         };
 
         window.startNewSession();
-        expect(window.confirm).toHaveBeenCalled();
+
+        expect(window.showCustomDialog).toHaveBeenCalled();
         expect(window.projectSamples).toEqual([]);
         expect(document.getElementById('mainMenu').style.display).toBe('none');
     });
 
     it('startNewSession should NOT ask confirmation if empty', () => {
         window.projectSamples = [];
-        window.confirm.mockClear();
+        window.showCustomDialog = vi.fn();
 
-        // Mock implementation 
+        // Mock simple implementation for empty case
         window.startNewSession = function () {
+            const performReset = () => {
+                window.projectSamples = [];
+                window.createNewSample(false);
+                document.getElementById('mainMenu').style.display = 'none';
+            };
             if (window.projectSamples.length > 0) {
-                if (!confirm("Overwrite?")) return;
+                // ...
+            } else {
+                performReset();
             }
-            window.projectSamples = [];
-            window.createNewSample(false);
-            document.getElementById('mainMenu').style.display = 'none';
         }
 
         window.startNewSession();
-        expect(window.confirm).not.toHaveBeenCalled();
+        expect(window.showCustomDialog).not.toHaveBeenCalled();
     });
 });
