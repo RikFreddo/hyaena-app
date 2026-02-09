@@ -295,10 +295,10 @@ window.renderSampleList = function () {
 </div>
 
 <!-- Metadata Columns (Visible in Fullscreen) -->
-<div class="meta-col" title="Tooth">${md.tooth || '-'}</div>
-<div class="meta-col" title="Side">${md.side || '-'}</div>
-<div class="meta-col" title="Part">${md.part || '-'}</div>
-<div class="meta-col" title="Mag">${md.mag || '-'}</div>
+<div class="meta-col" title="Tooth">🦷 ${md.tooth || '-'}</div>
+<div class="meta-col" title="Side">📍 ${md.side || '-'}</div>
+<div class="meta-col" title="Part">🧩 ${md.part || '-'}</div>
+<div class="meta-col" title="Mag">🔎 ${md.mag || '-'}</div>
 
 <div class="btn-icon-group">
 <button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button>
