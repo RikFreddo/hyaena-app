@@ -180,5 +180,39 @@ window.closeStatsModal = function () {
 };
 
 window.showMainMenu = function () {
+    const hasSession = (window.projectSamples && window.projectSamples.length > 0);
+    const btnResume = document.getElementById('btnResumeSession');
+    if (btnResume) {
+        btnResume.style.display = hasSession ? 'flex' : 'none';
+        // Highlight Resume if active
+        if (hasSession) {
+            // Optional: visual cue
+        }
+    }
     document.getElementById('mainMenu').style.display = 'flex';
+};
+
+window.resumeSession = function () {
+    document.getElementById('mainMenu').style.display = 'none';
+};
+
+window.startNewSession = function () {
+    if (window.projectSamples && window.projectSamples.length > 0) {
+        if (!confirm("This will clear the current session and start a new one. Any unsaved changes will be lost.\n\nContinue?")) {
+            return;
+        }
+    }
+
+    // Clear State
+    window.projectSamples = [];
+    window.activeSampleId = null;
+    window.items = [];
+    window.currentProjectName = "New_Project";
+    document.getElementById('headerTitle').innerText = window.currentProjectName;
+
+    // Create first empty sample
+    window.createNewSample(false);
+
+    // Hide Menu
+    document.getElementById('mainMenu').style.display = 'none';
 };

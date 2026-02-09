@@ -19,7 +19,9 @@
         <img src="icon.png" alt="Icon" class="app-logo">
         <div class="app-title">Hyaena</div>
 
-        <button class="menu-btn" onclick="startApp()"><span>➤</span> Start New Session</button>
+        <button class="menu-btn" id="btnResumeSession" onclick="resumeSession()"
+            style="display:none; background-color:var(--accent); color:white;"><span>➤</span> Resume Session</button>
+        <button class="menu-btn" onclick="startNewSession()"><span>🆕</span> Start New Session</button>
         <button class="menu-btn secondary" onclick="triggerLoadProject()"><span>📂</span> Load/Import Project</button>
         <button class="menu-btn secondary" onclick="toggleSettings()"><span>⚙️</span> Settings</button>
 
@@ -70,7 +72,7 @@
                                 <div onclick="openImportModal()">📂 Batch Import Samples</div>
                                 <div onclick="saveSingleSample()">💾 Save Sample (.json)</div>
                                 <div onclick="saveProject()">📚 Save Project (.json)</div>
-                                <div onclick="showMainMenu()">❌ Close Session</div>
+                                <div onclick="showMainMenu()">🔙 Back to Menu</div>
                             </div>
                         </div>
                         <input type="file" id="inpFile" accept="image/*" style="display:none">

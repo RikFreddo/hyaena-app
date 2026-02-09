@@ -73,7 +73,8 @@ const APP = {
 };
 
 window.startApp = function () {
-    document.getElementById('mainMenu').style.display = 'none';
+    // Legacy support or initial load
+    showMainMenu();
 };
 
 // Auto-Start
