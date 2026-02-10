@@ -445,6 +445,7 @@ window.handleFileSelection = function (e) {
                     originalFilename: confirmedData.originalFilename
                 };
                 renderSampleList();
+                document.getElementById('headerTitle').innerText = fname; // Update Header
                 loadImageFromFile(file);
             } else {
                 // New Sample Creation Flow
@@ -583,6 +584,7 @@ window.finalizeSingleImport = function (sample, imgFile) {
     // If image file provided, we need to load it manually after setting active
     activeSampleId = sample.id;
     currentFileName = sample.name;
+    document.getElementById('headerTitle').innerText = sample.name; // Update Header
     items = []; // Clear items
     redoStack = [];
     isCalibrated = false;
