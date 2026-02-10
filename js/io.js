@@ -82,7 +82,9 @@ window.exportExcel = function (mode) {
     csv += headers.join(sep) + "\n";
 
     projectSamples.forEach(s => {
-        let row = [`"${s.group || currentProjectName}"`, `"${s.name}"`, s.calibration && s.calibration.calibrated ? 'Yes' : 'No'];
+        // Use specimenId for export if available (for replicates), otherwise name
+        const exportId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
+        let row = [`"${s.group || currentProjectName}"`, `"${exportId}"`, s.calibration && s.calibration.calibrated ? 'Yes' : 'No'];
 
         if (mode === 'COUNTS' || mode === 'FULL') {
             let counts = {};
@@ -435,6 +437,8 @@ window.handleFileSelection = function (e) {
 
             if (waitingForImage && currSample) {
                 // Just load image into active sample (update its metadata)
+                // Use the name as Specimen ID if not already set? 
+                // Actually, if we are loading into existing, we keep existing structure.
                 currSample.name = fname;
                 currentFileName = fname;
                 currSample.metadata = {
@@ -442,17 +446,26 @@ window.handleFileSelection = function (e) {
                     side: confirmedData.side,
                     part: confirmedData.part,
                     mag: confirmedData.mag,
-                    originalFilename: confirmedData.originalFilename
+                    originalFilename: confirmedData.originalFilename,
+                    specimenId: fname // Ensure ID is set
                 };
                 renderSampleList();
                 document.getElementById('headerTitle').innerText = fname; // Update Header
                 loadImageFromFile(file);
             } else {
                 // New Sample Creation Flow
-                if (isDuplicateName(fname)) {
-                    alert(`Warning: The sample "${fname}" already exists.`);
-                }
-                const newSample = initNewSample(fname, confirmedData);
+                // HANDLE DUPLICATES -> REPLICATES
+                const specimenId = fname;
+                const uniqueName = getUniqueName(fname);
+
+                // Note: confirmedData comes from showImportPreviewDialog which passed 'meta'
+                // We should enrich confirmedData with specimenId
+                confirmedData.specimenId = specimenId;
+
+                const newSample = initNewSample(uniqueName, confirmedData);
+                // Explicitly set specimenId in metadata (initNewSample might not cover it genericly if not in 'metadata' arg structure)
+                newSample.metadata.specimenId = specimenId;
+
                 askGroupForImageImport(newSample, file);
             }
         }, () => {
@@ -512,12 +525,13 @@ window.askGroupForImageImport = function (newSample, file) {
 };
 
 window.processSingleImport = function (name, data) {
-    if (isDuplicateName(name)) {
-        alert(`Warning: The sample "${name}" already exists in the current project.`);
-    }
+    const specimenId = name;
+    const uniqueName = getUniqueName(name);
 
     // Ask for group for single JSON too
-    const newSample = initNewSample(name);
+    const newSample = initNewSample(uniqueName);
+    newSample.metadata.specimenId = specimenId; // Store original ID for replicates
+
     newSample.items = data.items || [];
     if (data.calibration) {
         newSample.calibration = { ppu: data.calibration.ppu, unit: data.calibration.unit, calibrated: true };

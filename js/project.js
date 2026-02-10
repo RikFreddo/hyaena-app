@@ -464,3 +464,14 @@ window.addSampleToProject = function (sample) {
 window.isDuplicateName = function (name) {
     return projectSamples.some(s => s.name === name);
 };
+
+window.getUniqueName = function (baseName) {
+    let newName = baseName;
+    let counter = 2;
+    // Check if name exists, if so, append _2, _3, etc.
+    while (isDuplicateName(newName)) {
+        newName = `${baseName}_${counter}`;
+        counter++;
+    }
+    return newName;
+};
