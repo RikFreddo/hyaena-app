@@ -116,23 +116,43 @@ window.confirmCreateSample = function (groupName) {
 };
 
 window.deleteSample = function (id) {
-    if (confirm("Are you sure you want to delete this sample?")) {
-        projectSamples = projectSamples.filter(s => s.id !== id);
-        if (activeSampleId === id) {
-            // Deleted active one
-            if (projectSamples.length > 0) {
-                loadSampleIntoView(projectSamples[0].id);
-            } else {
-                activeSampleId = null;
-                items = [];
-                currentFileName = "No Sample";
-                img = new Image();
-                redraw();
-                document.getElementById('headerTitle').innerText = currentProjectName; // Fallback to Project Name
+    const s = projectSamples.find(x => x.id === id);
+    if (!s) return;
+
+    showCustomDialog(
+        "Delete Sample",
+        `Are you sure you want to delete sample "<b>${s.name}</b>"?<br>This cannot be undone.`,
+        [
+            {
+                label: "Delete",
+                class: "btn-red",
+                onClick: () => performDeleteSample(id)
+            },
+            {
+                label: "Cancel",
+                class: "btn-gray", // Optional class for cancel
+                onClick: () => { }
             }
+        ]
+    );
+};
+
+window.performDeleteSample = function (id) {
+    projectSamples = projectSamples.filter(s => s.id !== id);
+    if (activeSampleId === id) {
+        // Deleted active one
+        if (projectSamples.length > 0) {
+            loadSampleIntoView(projectSamples[0].id);
+        } else {
+            activeSampleId = null;
+            items = [];
+            currentFileName = "No Sample";
+            img = new Image();
+            redraw();
+            document.getElementById('headerTitle').innerText = currentProjectName; // Fallback to Project Name
         }
-        renderSampleList();
     }
+    renderSampleList();
 };
 
 window.renameSample = function (id) {
