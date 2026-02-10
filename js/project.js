@@ -43,6 +43,7 @@ window.createNewSample = function (promptUser = true) {
         }
         if (document.getElementById('noImageMsg')) document.getElementById('noImageMsg').style.display = 'block';
         if (document.getElementById('msgSampleName')) document.getElementById('msgSampleName').innerText = name;
+        if (document.getElementById('headerTitle')) document.getElementById('headerTitle').innerText = name; // Show Sample Name in Header
         if (document.getElementById('stats-bar')) document.getElementById('stats-bar').innerText = "Load photo to start.";
 
         redraw();
@@ -127,7 +128,7 @@ window.deleteSample = function (id) {
                 currentFileName = "No Sample";
                 img = new Image();
                 redraw();
-                document.getElementById('headerTitle').innerText = currentProjectName;
+                document.getElementById('headerTitle').innerText = currentProjectName; // Fallback to Project Name
             }
         }
         renderSampleList();
@@ -137,19 +138,50 @@ window.deleteSample = function (id) {
 window.renameSample = function (id) {
     const s = projectSamples.find(x => x.id === id);
     if (!s) return;
-    const newName = prompt("Rename sample:", s.name);
-    if (newName && newName !== s.name) {
-        if (isDuplicateName(newName)) {
-            alert(`Name "${newName}" already exists.`);
-            return;
+    showInputDialog("Rename Sample", "Enter new name for sample:", s.name, (newName) => {
+        if (newName && newName !== s.name) {
+            if (isDuplicateName(newName)) {
+                alert(`Name "${newName}" already exists.`);
+                return;
+            }
+            s.name = newName;
+            if (activeSampleId === id) {
+                currentFileName = newName;
+                document.getElementById('msgSampleName').innerText = newName;
+                document.getElementById('headerTitle').innerText = newName; // Update Header
+            }
+            renderSampleList();
         }
-        s.name = newName;
-        if (activeSampleId === id) {
-            currentFileName = newName;
-            document.getElementById('msgSampleName').innerText = newName;
+    });
+};
+
+window.renameProject = function () {
+    showInputDialog("Rename Project", "Enter new name for the project:", currentProjectName, (newName) => {
+        if (newName && newName !== currentProjectName) {
+            currentProjectName = newName;
+            document.getElementById('projNameDisplay').innerText = newName;
+            // Only update header if NO sample is active, otherwise keep sample name
+            if (!activeSampleId) {
+                document.getElementById('headerTitle').innerText = newName;
+            }
         }
-        renderSampleList();
-    }
+    });
+};
+
+window.renameGroup = function (oldGroupName) {
+    showInputDialog("Rename Group", `Enter new name for group "<b>${oldGroupName}</b>":`, oldGroupName, (newGroupName) => {
+        if (newGroupName && newGroupName !== oldGroupName) {
+            let count = 0;
+            projectSamples.forEach(s => {
+                if (s.group === oldGroupName) {
+                    s.group = newGroupName;
+                    count++;
+                }
+            });
+            renderSampleList();
+            // Optional: alert(`Renamed group for ${count} samples.`);
+        }
+    });
 };
 
 window.sortSamplesAZ = function () {
@@ -222,6 +254,7 @@ window.loadSampleIntoView = function (id) {
     if (document.getElementById('cvs')) document.getElementById('cvs').style.display = 'none';
     document.getElementById('noImageMsg').style.display = 'block';
     document.getElementById('msgSampleName').innerText = sample.name;
+    document.getElementById('headerTitle').innerText = sample.name; // Show Sample Name
     document.getElementById('stats-bar').innerText = "Load photo to start.";
 
     renderSampleList();
@@ -250,7 +283,26 @@ window.renderSampleList = function () {
         if (s.group !== lastGroup) {
             const h = document.createElement('li');
             h.className = 'list-header';
-            h.innerText = s.group;
+            h.style.display = 'flex';
+            h.style.justifyContent = 'space-between';
+            h.style.alignItems = 'center';
+
+            const titleSpan = document.createElement('span');
+            titleSpan.innerText = s.group;
+            h.appendChild(titleSpan);
+
+            const btnEdit = document.createElement('button');
+            btnEdit.className = 'btn-icon-small';
+            btnEdit.innerHTML = '✎';
+            btnEdit.title = 'Rename Group';
+            btnEdit.style.fontSize = '12px';
+            btnEdit.style.opacity = '0.7';
+            btnEdit.onclick = (e) => {
+                e.stopPropagation();
+                renameGroup(s.group);
+            };
+            h.appendChild(btnEdit);
+
             sampleListEl.appendChild(h);
             lastGroup = s.group;
         }
