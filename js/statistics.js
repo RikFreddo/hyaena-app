@@ -23,7 +23,7 @@ function getStatsFromItems(itemsList, calibration) {
     let res = {
         // Morphometry
         crushingIndex: 0,
-        percLargePits: 0,
+        percMeasuredPits: 0,
         maxPitDiameter: 0,
         aspectRatio: 0,
         meanScratchWidth: 0,
@@ -77,37 +77,48 @@ function getStatsFromItems(itemsList, calibration) {
 
     const areaMm2 = (wPx * hPx) / (ppu * ppu) / 1000000;
 
-    // PITS
-    let totalPitDia = 0;
-    let maxPitDia = 0;
-    let largePitsCount = 0;
+    // PITS & SCRATCHES FILTERED
+    const pitsForStats = pits.filter(p => p.catId !== 'pp' && p.catId !== 'g');
+    const scratchesForStats = scratches.filter(s => s.catId !== 'pp' && s.catId !== 'g');
+
+    // PITS STATS
+    let totalPitDia = 0; // Not used for CI anymore but maybe for debugging? Removing.
+    let totalDiaCI = 0;
+    let measuredPitsCount = 0;
     let totalPitArea = 0;
+    let maxPitDia = 0;
 
-    pits.forEach(p => {
-        let diam = 0;
-        if (p.type === 'point') {
-            diam = STD_PIT_DIA;
-            // If p.catId === 'pp' (small pit)? 
-            // Standard logic usually treats all points as standard diameter unless measured.
-        } else {
-            let rPx = p.r || 0;
-            diam = (rPx * 2) / ppu;
-        }
+    // Grid for Heterogeneity
+    const cw = wPx / 10;
+    const ch = hPx / 10;
+    const gridP = Array(10).fill(0).map(() => Array(10).fill(0));
 
-        if (diam > maxPitDia) maxPitDia = diam;
-        totalPitDia += diam;
-        if (diam > 4.0) largePitsCount++;
+    pitsForStats.forEach(p => {
+        let d = 0;
+        if (p.type === 'point') d = STD_PIT_DIA;
+        else d = (p.r * 2) / ppu;
 
-        let radius = diam / 2;
+        // Stats
+        totalDiaCI += d;
+        if (d > 4.0) measuredPitsCount++;
+        if (d > maxPitDia) maxPitDia = d;
+
+        // Severity
+        let radius = d / 2;
         totalPitArea += Math.PI * radius * radius;
+
+        // Heterogeneity
+        const x = Math.floor(p.x / cw);
+        const y = Math.floor(p.y / ch);
+        if (x >= 0 && x < 10 && y >= 0 && y < 10) gridP[y][x]++;
     });
 
-    res.crushingIndex = pits.length > 0 ? (totalPitDia / pits.length) : 0;
-    res.percLargePits = pits.length > 0 ? (largePitsCount / pits.length) * 100 : 0;
+    res.crushingIndex = pitsForStats.length > 0 ? (totalDiaCI / pitsForStats.length) : 0;
+    res.percMeasuredPits = pitsForStats.length > 0 ? (measuredPitsCount / pitsForStats.length) * 100 : 0;
     res.maxPitDiameter = maxPitDia;
     res.severityPits = totalPitArea;
 
-    // SCRATCHES
+    // SCRATCHES STATS
     let totalLen = 0;
     let totalWidth = 0;
     let totalScrArea = 0;
@@ -117,7 +128,34 @@ function getStatsFromItems(itemsList, calibration) {
     let sumMeasuredAR = 0;
     let countMeasured = 0;
 
-    scratches.forEach(s => {
+    // Grid for Scratch Het
+    const gridS = Array(9).fill(0).map(() => Array(9).fill(0));
+
+    // Helper: Line-Rect Intersection
+    function lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+        // Check if either end is inside
+        if ((x1 >= rx && x1 <= rx + rw && y1 >= ry && y1 <= ry + rh) ||
+            (x2 >= rx && x2 <= rx + rw && y2 >= ry && y2 <= ry + rh)) return true;
+
+        // Cohen-Sutherland-like checks or separating axis would be better, but simple check:
+        // Check if line intersects any of the 4 borders
+        const check = (lx1, ly1, lx2, ly2) => {
+            const den = (lx2 - lx1) * (y2 - y1) - (ly2 - ly1) * (x2 - x1);
+            if (den === 0) return false;
+            const ua = ((lx2 - lx1) * (y1 - ly1) - (ly2 - ly1) * (x1 - lx1)) / den;
+            const ub = ((x2 - x1) * (y1 - ly1) - (y2 - y1) * (x1 - lx1)) / den;
+            return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+        };
+        // Top, Right, Bottom, Left
+        if (check(rx, ry, rx + rw, ry)) return true;
+        if (check(rx + rw, ry, rx + rw, ry + rh)) return true;
+        if (check(rx, ry + rh, rx + rw, ry + rh)) return true;
+        if (check(rx, ry, rx, ry + rh)) return true;
+
+        return false;
+    }
+
+    scratchesForStats.forEach(s => {
         const dx = s.x2 - s.x1;
         const dy = s.y2 - s.y1;
         let len = Math.hypot(dx, dy) / ppu;
@@ -149,16 +187,38 @@ function getStatsFromItems(itemsList, calibration) {
         const angle2 = 2 * angle;
         vectorSumX += Math.cos(angle2);
         vectorSumY += Math.sin(angle2);
+
+        // Heterogeneity: Check intersection with all 81 cells
+        // Optimization: Check only cells in bounding box
+        const minSx = Math.min(s.x1, s.x2);
+        const maxSx = Math.max(s.x1, s.x2);
+        const minSy = Math.min(s.y1, s.y2);
+        const maxSy = Math.max(s.y1, s.y2);
+
+        const startX = Math.max(0, Math.floor(minSx / cw));
+        const endX = Math.min(8, Math.floor(maxSx / cw));
+        const startY = Math.max(0, Math.floor(minSy / ch));
+        const endY = Math.min(8, Math.floor(maxSy / ch));
+
+        for (let gy = startY; gy <= endY; gy++) {
+            for (let gx = startX; gx <= endX; gx++) {
+                const rx = gx * cw;
+                const ry = gy * ch;
+                if (lineIntersectsRect(s.x1, s.y1, s.x2, s.y2, rx, ry, cw, ch)) {
+                    gridS[gy][gx]++;
+                }
+            }
+        }
     });
 
-    if (scratches.length > 0) {
-        res.meanScratchWidth = totalWidth / scratches.length;
-        res.aspectRatio = sumAspectRatio / scratches.length;
+    if (scratchesForStats.length > 0) {
+        res.meanScratchWidth = totalWidth / scratchesForStats.length;
+        res.aspectRatio = sumAspectRatio / scratchesForStats.length;
         res.severityScratches = totalScrArea;
 
         if (countMeasured > 0) res.measuredAspectRatio = sumMeasuredAR / countMeasured;
 
-        const R = Math.hypot(vectorSumX, vectorSumY) / scratches.length;
+        const R = Math.hypot(vectorSumX, vectorSumY) / scratchesForStats.length;
         res.anisotropy = R;
         res.vectorConsistency = 1 - R;
 
@@ -169,37 +229,20 @@ function getStatsFromItems(itemsList, calibration) {
     }
 
     // RATIOS
-    if (scratches.length > 0) res.psRatio = pits.length / scratches.length;
-    else if (pits.length > 0) res.psRatio = pits.length;
+    if (scratchesForStats.length > 0) res.psRatio = pitsForStats.length / scratchesForStats.length;
+    else if (pitsForStats.length > 0) res.psRatio = pitsForStats.length;
 
     if (areaMm2 > 0) res.bgAbrasion = (totalLen / 1000) / areaMm2;
 
     res.severityTotal = res.severityPits + res.severityScratches;
     if (res.severityScratches > 0) res.severityRatio = res.severityPits / res.severityScratches;
 
-    const totalCount = pits.length + scratches.length;
+    const totalCount = pitsForStats.length + scratchesForStats.length;
     if (totalCount > 0) res.meanFeatureSeverity = res.severityTotal / totalCount;
 
     res.durophagyIndex = res.psRatio * res.crushingIndex;
 
-    // HET
-    const cw = wPx / 10;
-    const ch = hPx / 10;
-    const gridP = Array(10).fill(0).map(() => Array(10).fill(0));
-    const gridS = Array(10).fill(0).map(() => Array(10).fill(0));
 
-    pits.forEach(p => {
-        const x = Math.floor(p.x / cw);
-        const y = Math.floor(p.y / ch);
-        if (x >= 0 && x < 10 && y >= 0 && y < 10) gridP[y][x]++;
-    });
-    scratches.forEach(s => {
-        const cx = (s.x1 + s.x2) / 2;
-        const cy = (s.y1 + s.y2) / 2;
-        const x = Math.floor(cx / cw);
-        const y = Math.floor(cy / ch);
-        if (x >= 0 && x < 10 && y >= 0 && y < 10) gridS[y][x]++;
-    });
 
     function getCV(grid) {
         const flat = grid.flat();

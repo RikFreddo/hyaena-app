@@ -82,7 +82,7 @@ window.openGroupModal = function () {
 };
 
 window.askForSampleName = function (groupName) {
-    const defaultName = "Sample_" + (projectSamples.length + 1);
+    const defaultName = getUniqueName("Sample_" + (projectSamples.length + 1));
     showInputDialog("New Sample", `Creating sample in <b>${groupName}</b>.<br>Enter Sample Name:`, defaultName, (name) => {
         if (name) finalizeCreateSample(name, groupName);
     });
@@ -90,13 +90,12 @@ window.askForSampleName = function (groupName) {
 
 window.finalizeCreateSample = function (name, groupName) {
     try {
-        if (isDuplicateName(name)) {
-            alert(`Warning: A sample named "${name}" already exists.`);
-        }
+        // Enforce Unique Name
+        const uniqueName = getUniqueName(name);
 
         syncState(); // Save current before switching
 
-        const newSample = initNewSample(name);
+        const newSample = initNewSample(uniqueName);
         newSample.group = groupName;
 
         addSampleToProject(newSample);
@@ -155,24 +154,36 @@ window.performDeleteSample = function (id) {
     renderSampleList();
 };
 
-window.renameSample = function (id) {
+window.editSampleMetadata = function (id) {
     const s = projectSamples.find(x => x.id === id);
     if (!s) return;
-    showInputDialog("Rename Sample", "Enter new name for sample:", s.name, (newName) => {
-        if (newName && newName !== s.name) {
-            if (isDuplicateName(newName)) {
-                alert(`Name "${newName}" already exists.`);
+
+    showEditSampleDialog(s, (newData) => {
+        // Handle Name Change
+        if (newData.name !== s.name) {
+            if (isDuplicateName(newData.name)) {
+                alert(`Name "${newData.name}" already exists. Please choose another.`);
                 return;
             }
-            s.name = newName;
-            if (activeSampleId === id) {
-                currentFileName = newName;
-                document.getElementById('msgSampleName').innerText = newName;
-                document.getElementById('headerTitle').innerText = newName; // Update Header
-            }
-            renderSampleList();
+            s.name = newData.name;
         }
+
+        // Update Metadata
+        s.metadata = { ...s.metadata, ...newData.metadata };
+
+        // Update UI
+        if (activeSampleId === id) {
+            currentFileName = s.name;
+            document.getElementById('msgSampleName').innerText = s.name;
+            document.getElementById('headerTitle').innerText = s.name;
+        }
+        renderSampleList();
     });
+};
+
+// Deprecated alias
+window.renameSample = function (id) {
+    editSampleMetadata(id);
 };
 
 window.renameProject = function () {
@@ -199,7 +210,6 @@ window.renameGroup = function (oldGroupName) {
                 }
             });
             renderSampleList();
-            // Optional: alert(`Renamed group for ${count} samples.`);
         }
     });
 };
@@ -220,7 +230,6 @@ window.syncState = function () {
     if (s) {
         s.items = JSON.parse(JSON.stringify(items));
         s.calibration = { ppu: pixelsPerUnit, unit: unitName, calibrated: isCalibrated };
-        // Note: We don't save the image blob strictly here to avoid memory bloat
     }
 };
 
@@ -250,23 +259,9 @@ window.loadSampleIntoView = function (id) {
     document.getElementById('mainMenu').style.display = 'none';
 
     // Image Handling
-    // If the sample object *has* an image data URI stored (from small implementation), load it.
-    // BUT current logic mostly relies on just keeping the one in memory if we just switched samples
-    // Logic gap: If I switch sample, the image is gone unless I reload it or it is stored.
-    // The previous implementation assumes we might just be annotating one image or re-loading images.
-
-    // FIX: If we switch samples, we usually expect the image to change.
-    // Since we don't hold full images in `projectSamples` (too heavy for JSON),
-    // we must prompt user or clear canvas if it's a different session.
-    // However, for the simple usage:
-    // User loads Image -> created Sample A.
-    // User creates Sample B -> (Usually same image? or New image?)
-    // This refined app assumes 1 Sample = 1 Image context.
-
     // If sample.imageSrc exists (from import), try to use it.
     if (sample.imageSrc) {
-        // To be implemented fully if we want to store base64 images (heavy)
-        // For now, checks are done in the UI.
+        // Placeholder for future logic
     }
 
     // Reset UI for new sample
@@ -359,6 +354,17 @@ window.renderSampleList = function () {
 
         // Build HTML for the list item
         const md = s.metadata || {};
+
+        // Safe Display Logic for Age (Does not modify data)
+        let displayAge = md.age;
+        // Treat whitespace-only as empty to force inference
+        if (!displayAge || (typeof displayAge === 'string' && !displayAge.trim())) {
+            // Infer from Tooth
+            const t = (md.tooth || "").toLowerCase();
+            if (t.startsWith('d')) displayAge = "J";
+            else displayAge = "A";
+        }
+
         li.innerHTML = `
 <div class="sample-info">
 <div class="sample-name">${s.name}</div>
@@ -368,12 +374,13 @@ window.renderSampleList = function () {
 
 <!-- Metadata Columns (Visible in Fullscreen) -->
 <div class="meta-col" title="Tooth">🦷 ${md.tooth || '-'}</div>
+<div class="meta-col" title="Age">⏳ ${displayAge}</div>
 <div class="meta-col" title="Side">📍 ${md.side || '-'}</div>
 <div class="meta-col" title="Part">🧩 ${md.part || '-'}</div>
 <div class="meta-col" title="Mag">🔎 ${md.mag || '-'}</div>
 
 <div class="btn-icon-group">
-<button class="btn-icon-small" onclick="event.stopPropagation(); renameSample('${s.id}')" title="Rename">✎</button>
+<button class="btn-icon-small" onclick="event.stopPropagation(); editSampleMetadata('${s.id}')" title="Edit Details">✎</button>
 <button class="btn-icon-small danger" onclick="event.stopPropagation(); deleteSample('${s.id}')" title="Delete">🗑️</button>
 </div>
 `;
@@ -427,23 +434,9 @@ window.handleDrop = function (e) {
         // Move in array
         const movedItem = projectSamples[srcIdx];
 
-        // --- LOGIC CHANGE: PREVENT CROSS-GROUP DRAGGING IF NEEDED ---
-        // For now, allow it, but update the group of the moved item to match target?
-        // Or just reorder global list?
-        // Simple reorder:
         projectSamples.splice(srcIdx, 1);
         projectSamples.splice(targetIdx, 0, movedItem);
 
-        // Auto-update group if moved into different group block
-        // (Simplistic approach: adopt group of neighbour/target)
-        // Check surrounding items to infer group
-        // If we really want "Drop into group", we need robust logic.
-        // For now: Just reorder list. The group property stays same unless we logic it.
-        // Let's adopt the group of the TARGET we dropped ON or BEFORE.
-        movedItem.group = projectSamples[targetIdx].group;
-        // Note: targetIdx is the index *after* splice removal/insert? 
-        // Actually splice logic above is correct for Array move.
-        // But let's refine group sync:
         if (projectSamples[targetIdx]) {
             movedItem.group = projectSamples[targetIdx].group;
         }
@@ -485,13 +478,99 @@ window.isDuplicateName = function (name) {
     return projectSamples.some(s => s.name === name);
 };
 
-window.getUniqueName = function (baseName) {
-    let newName = baseName;
-    let counter = 2;
-    // Check if name exists, if so, append _2, _3, etc.
-    while (isDuplicateName(newName)) {
-        newName = `${baseName}_${counter}`;
-        counter++;
+// ==========================================================================
+// METADATA UTILS
+// ==========================================================================
+
+window.getUniqueName = function (baseName, excludeId = null) {
+    let name = baseName;
+    let count = 2;
+    // Check if name exists, excluding the current sample (if excludeId provided)
+    while (projectSamples.some(s => s.name === name && s.id !== excludeId)) {
+        name = `${baseName}_${count}`;
+        count++;
     }
-    return newName;
+    return name;
+};
+
+window.regenerateMetadata = function () {
+    showCustomDialog(
+        "Regenerate Metadata",
+        "Regenerate metadata for all samples based on their filenames?<br><br><b>This will overwrite</b> existing Tooth, Side, Part, Mag fields AND <b>Rename Samples</b> to their clean IDs.",
+        [
+            {
+                label: "Regenerate & Rename",
+                class: "btn-green",
+                onClick: () => performRegeneration()
+            },
+            {
+                label: "Cancel",
+                class: "btn-gray",
+                onClick: () => { }
+            }
+        ]
+    );
+};
+
+window.performRegeneration = function () {
+    let count = 0;
+    projectSamples.forEach(s => {
+        // Source to parse: prefer originalFilename if available, else name
+        const source = (s.metadata && s.metadata.originalFilename) ? s.metadata.originalFilename : s.name;
+
+        // Use the utility function from utils.js
+        if (typeof parseFilename === 'function') {
+            const parsed = parseFilename(source);
+
+            let modified = false;
+            // Ensure metadata object exists
+            if (!s.metadata) s.metadata = {};
+
+            // Update fields if parsed value is valid and different
+            if (parsed.tooth && s.metadata.tooth !== parsed.tooth) { s.metadata.tooth = parsed.tooth; modified = true; }
+            if (parsed.side && s.metadata.side !== parsed.side) { s.metadata.side = parsed.side; modified = true; }
+            if (parsed.part && s.metadata.part !== parsed.part) { s.metadata.part = parsed.part; modified = true; }
+            if (parsed.mag && s.metadata.mag !== parsed.mag) { s.metadata.mag = parsed.mag; modified = true; }
+
+            // RENAME SAMPLE TO CLEAN ID (UNIQUE)
+            if (parsed.id) {
+                // Generate a unique name based on parsed ID, excluding self
+                const newName = getUniqueName(parsed.id, s.id);
+
+                if (s.name !== newName) {
+                    s.name = newName;
+                    modified = true;
+                }
+            }
+
+            // Sync specimenId (Keep clean ID, do not add suffix _2 etc to metadata ID)
+            if (!s.metadata.specimenId || s.metadata.specimenId !== parsed.id) {
+                s.metadata.specimenId = parsed.id;
+                modified = true;
+            }
+
+            if (modified) count++;
+        }
+    });
+
+    renderSampleList();
+
+    // If active sample was renamed, update header
+    if (activeSampleId) {
+        const activeS = projectSamples.find(s => s.id === activeSampleId);
+        if (activeS) {
+            document.getElementById('msgSampleName').innerText = activeS.name;
+            document.getElementById('headerTitle').innerText = activeS.name;
+            currentFileName = activeS.name;
+        }
+    }
+
+    // Show success message using Custom Dialog too, instead of alert
+    showCustomDialog(
+        "Regeneration Complete",
+        `Metadata regenerated and samples renamed for <b>${count}</b> samples.`,
+        [
+            { label: "OK", class: "btn-blue", onClick: () => toggleSettings() }
+        ]
+    );
 };

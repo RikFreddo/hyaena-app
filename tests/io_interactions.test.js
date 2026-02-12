@@ -10,6 +10,7 @@ describe('IO Operations', () => {
         // Setup Mocks
         window.img = { src: "data:image/png;base64,mock" }; // Mock loaded image
         window.items = [];
+        window.projectSamples = []; // Fix: Initialize projectSamples
         window.isCalibrated = false;
         window.syncState = vi.fn();
         window.showInputDialog = vi.fn();
@@ -20,6 +21,9 @@ describe('IO Operations', () => {
 
         // Mock Anchor Click
         window.HTMLAnchorElement.prototype.click = vi.fn();
+
+        // Mock Helper Functions
+        window.getUniqueName = vi.fn((name) => name);
     });
 
     it('saveSingleSample should prompt for name and download', () => {
@@ -47,7 +51,7 @@ describe('IO Operations', () => {
     it('processSingleImport should show Custom Dialog for group selection', () => {
         window.showCustomDialog = vi.fn();
         window.isDuplicateName = vi.fn(() => false);
-        window.initNewSample = vi.fn((name) => ({ name, id: name, items: [] }));
+        window.initNewSample = vi.fn((name) => ({ name, id: name, items: [], metadata: {} }));
 
         const mockData = { items: [] };
         window.processSingleImport("ImportedFile", mockData);

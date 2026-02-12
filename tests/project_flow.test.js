@@ -27,16 +27,18 @@ describe('Project Logic Flow', () => {
         expect(window.renderSampleList).toHaveBeenCalled();
     });
 
-    it('finalizeCreateSample should alert on duplicate', () => {
+    it('finalizeCreateSample should generate unique name on duplicate', () => {
         window.projectSamples = [{ name: "Existing", id: "1", group: "G" }];
 
-        // Mock initNewSample to return distinct ID even if name same
-        // But logic checks isDuplicateName
+        // Mock getUniqueName Logic (since it's a window function usually in utils or project)
+        // If getting "Existing", should return "Existing_2"
+        window.getUniqueName = vi.fn((name) => name === "Existing" ? "Existing_2" : name);
 
         window.finalizeCreateSample("Existing", "G2");
-        expect(window.alert).toHaveBeenCalled();
-        // It still proceeds to create duplicate in current implementation with warning
+
+        expect(window.alert).not.toHaveBeenCalled();
         expect(window.projectSamples).toHaveLength(2);
+        expect(window.projectSamples[1].name).toBe("Existing_2");
     });
 
     it('askForSampleName should call showInputDialog with correct callback', () => {

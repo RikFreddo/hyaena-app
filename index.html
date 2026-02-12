@@ -30,12 +30,18 @@
             <div class="theme-opt" onclick="setTheme('light')" id="themeLight">☀️ Light</div>
             <div class="theme-opt" onclick="setTheme('dark')" id="themeDark">🌙 Dark</div>
             <div class="theme-opt" onclick="setTheme('auto')" id="themeAuto">🔄 Auto (System)</div>
+
+            <div style="border-top:1px solid #ccc; margin-top:15px; margin-bottom:10px;"></div>
+            <div style="font-weight:bold; margin-bottom:5px;">Data & Maintenance</div>
+            <button class="btn" style="width:100%; margin-bottom:5px;" onclick="regenerateMetadata()">♻️ Regenerate
+                Metadata</button>
+
             <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="toggleSettings()">Done</button>
         </div>
 
         <div id="versionDisplay"
-            style="position:fixed; bottom:5px; right:5px; color:var(--text-sec); font-size:10px; z-index:9999;">Version
-            0.25.11
+            style="position:fixed; bottom:5px; right:5px; color:var(--text-sec); font-size:10px; z-index:9999;">
+            &copy; 2026 Hyaena v0.25.42
             (Refactored Modular)</div>
     </div>
 
@@ -50,7 +56,7 @@
                 </div>
             </div>
             <div id="samplesHeader">
-                <span>Samples</span>
+                Samples
                 <div style="display:flex; gap:5px;">
                     <button class="btn-mini" onclick="sortSamplesAZ()" title="Sort AZ inside groups">AZ</button>
                     <button class="btn-mini" onclick="createNewSample(true)">+ NEW</button>
@@ -270,7 +276,7 @@
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2100; justify-content:center; align-items:center;">
         <div
             style="background:var(--modal-bg); color:var(--text-main); padding:20px; border-radius:12px; width:95%; max-width:400px; max-height:90%; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.3); display:flex; flex-direction:column;">
-            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Advanced Statistics
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Microwear Stats
             </h3>
             <div id="statsContent"
                 style="font-size:13px; line-height:1.6; flex-grow:1; overflow-y:auto; margin-bottom:15px;"></div>
@@ -298,17 +304,19 @@
 
     <!-- CORE LOGIC & UTILS -->
     <!-- Removed duplicate utils.js and non-versioned imports to ensure cache busting -->
-    <script src="js/utils.js?v=0.25.15"></script>
-    <script src="js/consts.js?v=0.25.15"></script>
-    <script src="js/statistics.js?v=0.25.15"></script>
-    <script src="js/state.js?v=0.25.15"></script>
+    <!-- CORE LOGIC & UTILS -->
+    <!-- Removed duplicate utils.js and non-versioned imports to ensure cache busting -->
+    <script src="js/utils.js?v=0.25.41"></script>
+    <script src="js/consts.js?v=0.25.41"></script>
+    <script src="js/statistics.js?v=0.25.41"></script>
+    <script src="js/state.js?v=0.25.41"></script>
 
     <!-- UI & APP LOGIC -->
-    <script src="js/canvas.js?v=0.25.15"></script>
-    <script src="js/project.js?v=0.25.15"></script> <!-- Depends on consts, state -->
-    <script src="js/ui.js?v=0.25.15"></script> <!-- Depends on project, stats -->
-    <script src="js/io.js?v=0.25.15"></script> <!-- Depends on project, utils -->
-    <script src="js/app.js?v=0.25.15"></script> <!-- Initializes everything -->
+    <script src="js/canvas.js?v=0.25.41"></script>
+    <script src="js/project.js?v=0.25.41"></script> <!-- Depends on consts, state -->
+    <script src="js/ui.js?v=0.25.41"></script> <!-- Depends on project, stats -->
+    <script src="js/io.js?v=0.25.41"></script> <!-- Depends on project, utils -->
+    <script src="js/app.js?v=0.25.41"></script> <!-- Initializes everything -->
 
 </body>
 

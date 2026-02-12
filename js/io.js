@@ -64,7 +64,8 @@ window.exportExcel = function (mode) {
     let csv = "";
 
     // Headers
-    let headers = ["Group", "Sample Name", "Calibrated"];
+    // NEW ORDER: Id, Species, Age, ...stats..., Tooth, Side, Part, Mag
+    let headers = ["Id", "Species", "Age"];
 
     if (mode === 'COUNTS' || mode === 'FULL') {
         STATS_ORDER.forEach(k => headers.push(CATS[k].label));
@@ -72,19 +73,33 @@ window.exportExcel = function (mode) {
     if (mode === 'STATS' || mode === 'FULL') {
         // Add robust headers
         headers.push(
-            "Crushing Index", "% Large Pits", "Max Pit Dia", "Severity Pits",
+            "Crushing Index", "% Measured Pits", "Max Pit Dia", "Severity Pits",
             "Mean Scratch Width", "Aspect Ratio", "Severity Scratches", "Measured AR",
             "P/S Ratio", "Anisotropy", "Vector Consistency", "Mean Orient",
             "Bg Abrasion", "Severity Total", "Severity Ratio", "Mean Feat. Sev.",
             "Durophagy Index", "Pit Het.", "Scratch Het.", "Global Het."
         );
     }
+
+    // APPEND METADATA COLUMNS (Always at the end)
+    // Removed: OriginalFilename, SpecimenID
+    headers.push("Tooth", "Side", "Part", "Mag");
+
     csv += headers.join(sep) + "\n";
 
     projectSamples.forEach(s => {
         // Use specimenId for export if available (for replicates), otherwise name
         const exportId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
-        let row = [`"${s.group || currentProjectName}"`, `"${exportId}"`, s.calibration && s.calibration.calibrated ? 'Yes' : 'No'];
+        const md = s.metadata || {};
+
+        // AGE LOGIC: If tooth starts with 'd' or 'D', it is Juvenile (J), else Adult (A)
+        let age = "A";
+        if (md.tooth && (md.tooth.startsWith('d') || md.tooth.startsWith('D'))) {
+            age = "J";
+        }
+
+        // NEW ROW ORDER: Id, Species, Age
+        let row = [`"${exportId}"`, `"${s.group || currentProjectName}"`, `"${age}"`];
 
         if (mode === 'COUNTS' || mode === 'FULL') {
             let counts = {};
@@ -103,13 +118,23 @@ window.exportExcel = function (mode) {
 
             // Based on statistics.js return object
             row.push(
-                st.crushingIndex.toFixed(2), st.percLargePits.toFixed(1), st.maxPitDiameter.toFixed(2), st.severityPits.toFixed(0),
+                st.crushingIndex.toFixed(2), st.percMeasuredPits.toFixed(1), st.maxPitDiameter.toFixed(2), st.severityPits.toFixed(0),
                 st.meanScratchWidth.toFixed(2), st.aspectRatio.toFixed(2), st.severityScratches.toFixed(0), st.measuredAspectRatio.toFixed(2),
                 st.psRatio.toFixed(3), st.anisotropy.toFixed(3), st.vectorConsistency.toFixed(3), st.meanOrient.toFixed(1),
                 st.bgAbrasion.toFixed(4), st.severityTotal.toFixed(0), st.severityRatio.toFixed(3), st.meanFeatureSeverity.toFixed(1),
                 st.durophagyIndex.toFixed(2), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2)
             );
         }
+
+        // APPEND METADATA VALUES
+        // md already defined above
+        row.push(
+            `"${md.tooth || ''}"`,
+            `"${md.side || ''}"`,
+            `"${md.part || ''}"`,
+            `"${md.mag || ''}"`
+        );
+
         csv += row.join(sep) + "\n";
     });
 
@@ -439,18 +464,24 @@ window.handleFileSelection = function (e) {
                 // Just load image into active sample (update its metadata)
                 // Use the name as Specimen ID if not already set? 
                 // Actually, if we are loading into existing, we keep existing structure.
-                currSample.name = fname;
-                currentFileName = fname;
+
+                // FORCE UNIQUE NAME IF CONFLICT
+                // If the user loads "Tiger.jpg" into "Sample_1", we want "Tiger" (if unique) or "Tiger_2"
+                // The current sample ID should be excluded from check
+                const uniqueName = getUniqueName(fname, currSample.id);
+
+                currSample.name = uniqueName;
+                currentFileName = uniqueName;
                 currSample.metadata = {
                     tooth: confirmedData.tooth,
                     side: confirmedData.side,
                     part: confirmedData.part,
                     mag: confirmedData.mag,
                     originalFilename: confirmedData.originalFilename,
-                    specimenId: fname // Ensure ID is set
+                    specimenId: confirmedData.id // Specimen ID stays as parsed
                 };
                 renderSampleList();
-                document.getElementById('headerTitle').innerText = fname; // Update Header
+                document.getElementById('headerTitle').innerText = uniqueName; // Update Header
                 loadImageFromFile(file);
             } else {
                 // New Sample Creation Flow

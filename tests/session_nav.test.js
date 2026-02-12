@@ -30,7 +30,12 @@ describe('Session Navigation', () => {
     });
 
     it('showMainMenu should show Resume button if project has samples', () => {
-        window.projectSamples = [{ id: 1 }];
+        window.projectSamples = [{
+            id: 1,
+            name: "Test",
+            items: [],      // Fix: isSessionDirty checks items.length
+            group: "G"
+        }];
         window.showMainMenu();
         const btnResume = document.getElementById('btnResumeSession');
         expect(btnResume.style.display).not.toBe('none');
