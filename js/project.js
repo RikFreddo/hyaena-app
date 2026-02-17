@@ -159,6 +159,7 @@ window.editSampleMetadata = function (id) {
     if (!s) return;
 
     showEditSampleDialog(s, (newData) => {
+        let nameChanged = false;
         // Handle Name Change
         if (newData.name !== s.name) {
             if (isDuplicateName(newData.name)) {
@@ -166,10 +167,26 @@ window.editSampleMetadata = function (id) {
                 return;
             }
             s.name = newData.name;
+            nameChanged = true;
         }
 
-        // Update Metadata
+        // Update Metadata (This overwrites s.metadata with values from dialog, potentially old specimenId)
         s.metadata = { ...s.metadata, ...newData.metadata };
+
+        // [FIX] ALWAYS SYNC SPECIMEN ID WITH CURRENT NAME (USER REQUEST PRIORITIZES THIS)
+        // Regardless of whether name actually changed, we ensure ID matches the current name
+        // This fixes cases where ID was wrong/stale and user just hit Save.
+        const parser = (window.parseFilename || parseFilename);
+        if (parser) {
+            try {
+                const parsed = parser(s.name); // s.name is already updated
+                if (parsed && parsed.id) {
+                    s.metadata.specimenId = parsed.id;
+                }
+            } catch (e) {
+                console.error("Error parsing filename during rename:", e);
+            }
+        }
 
         // Update UI
         if (activeSampleId === id) {
@@ -215,7 +232,18 @@ window.renameGroup = function (oldGroupName) {
 };
 
 window.sortSamplesAZ = function () {
-    projectSamples.sort((a, b) => a.name.localeCompare(b.name));
+    projectSamples.sort((a, b) => {
+        // Primary Sort: Group Name (Alphabetical)
+        // Handle missing groups by treating as empty string or specific logic
+        const groupA = (a.group || "").toLowerCase();
+        const groupB = (b.group || "").toLowerCase();
+
+        if (groupA < groupB) return -1;
+        if (groupA > groupB) return 1;
+
+        // Secondary Sort: Sample Name (Alphabetical) within same group
+        return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+    });
     renderSampleList();
 };
 
@@ -512,11 +540,35 @@ window.regenerateMetadata = function () {
     );
 };
 
+window.sanitizeSpecimenIds = function () {
+    let count = 0;
+    projectSamples.forEach(s => {
+        // Enforce SpecimenID from Current Name
+        // This ensures export/aggregation always matches the visible list name
+        // parseFilename handles stripping suffixes like _2 automatically
+        if (typeof parseFilename === 'function') {
+            const parsed = parseFilename(s.name); // Always use name
+            if (parsed && parsed.id) {
+                // If ID is different or missing, update it
+                if (!s.metadata) s.metadata = {};
+                if (s.metadata.specimenId !== parsed.id) {
+                    s.metadata.specimenId = parsed.id;
+                    count++;
+                }
+            }
+        }
+    });
+    if (count > 0) {
+        console.log(`[Sanitize] Updated specimenId for ${count} samples based on current names.`);
+    }
+};
+
 window.performRegeneration = function () {
     let count = 0;
     projectSamples.forEach(s => {
-        // Source to parse: prefer originalFilename if available, else name
-        const source = (s.metadata && s.metadata.originalFilename) ? s.metadata.originalFilename : s.name;
+        // Source to parse: ALWAYS use current Name as source of truth
+        // User requested manual renames to be priority over originalFilename
+        const source = s.name;
 
         // Use the utility function from utils.js
         if (typeof parseFilename === 'function') {
@@ -533,6 +585,11 @@ window.performRegeneration = function () {
             if (parsed.mag && s.metadata.mag !== parsed.mag) { s.metadata.mag = parsed.mag; modified = true; }
 
             // RENAME SAMPLE TO CLEAN ID (UNIQUE)
+            // IF the current name is different from what parsing suggests (meaning it might be dirty?)
+            // But if we trust s.name, maybe we shouldn't rename it unless it's to fix casing?
+            // Actually, if s.name is "FSL2013_2", parsed.id is "FSL2013".
+            // Regeneration usually wants to restore "Clean" names.
+            // Let's keep rename logic but driven by the name itself (so it might just confirm it).
             if (parsed.id) {
                 // Generate a unique name based on parsed ID, excluding self
                 const newName = getUniqueName(parsed.id, s.id);
@@ -568,7 +625,7 @@ window.performRegeneration = function () {
     // Show success message using Custom Dialog too, instead of alert
     showCustomDialog(
         "Regeneration Complete",
-        `Metadata regenerated and samples renamed for <b>${count}</b> samples.`,
+        `Metadata regenerated and samples renamed for <b>${count}</b> samples.<br>Specimen IDs synced with current names.`,
         [
             { label: "OK", class: "btn-blue", onClick: () => toggleSettings() }
         ]

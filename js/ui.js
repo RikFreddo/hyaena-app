@@ -166,7 +166,21 @@ window.openStatsModal = function () {
             "Durophagy Index": "Combined index to amplify hard-object feeding signal. (P/S Ratio * Crushing Index)",
             "Pit Het.": "Variation (CV) of Pit density on 9x9 grid. (Sp, Lp)",
             "Scratch Het.": "Variation (CV) of Scratch density (intersections) on 9x9 grid. (Fs, Cs, Hcs)",
-            "Global Het.": "Average of Pit and Scratch Heterogeneity. (Pit Het, Scratch Het)"
+            "Global Het.": "Average of Pit and Scratch Heterogeneity. (Pit Het, Scratch Het)",
+
+            // New Tooltips
+            "Density Pits": "Number of Pits per mm². Correlates with Spd (Density of Peaks).",
+            "Density Scratches": "Number of Scratches per mm².",
+            "Density Total": "Total features per mm².",
+            "Sev. Pits %": "Percentage of total area covered by Pits.",
+            "Sev. Scratches %": "Percentage of total area covered by Scratches.",
+            "Sev. Total % (Void Vol)": "Percentage of total area covered by all features. Correlates with Vm/Vvv (Material/Void Volume).",
+
+            // Experimental Tooltips
+            "Intersections": "Total number of geometric intersections (Scratch-Scratch, Scratch-Pit).",
+            "Intersect. Density": "Number of intersections per mm². Proxy for Asfc (Fractal Complexity).",
+            "Texture Complex. Index": "Composite index (Int.Density * VectorConsistency + PitDensity * 0.5) to estimate Topographic Complexity.",
+            "Complexity Het.": "Heterogeneity (CV) of Complexity Index across 81 cells. Proxy for HAsfc81."
         };
 
         let h = `<table style="width:100%; border-collapse:collapse;">`;
@@ -205,6 +219,23 @@ window.openStatsModal = function () {
         h += row("Pit Het.", st.pitHet.toFixed(2));
         h += row("Scratch Het.", st.scratchHet.toFixed(2));
         h += row("Global Het.", st.globalHet.toFixed(2));
+
+        // NEW SECTIONS (v0.26.6)
+        h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent); text-transform:uppercase; font-size:11px;">Density (N/mm²)</td></tr>`;
+        h += row("Density Pits", st.densityPits.toFixed(1));
+        h += row("Density Scratches", st.densityScratches.toFixed(1));
+        h += row("Density Total", st.densityTotal.toFixed(1));
+
+        h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent); text-transform:uppercase; font-size:11px;">Normalized Severity (% Area)</td></tr>`;
+        h += row("Sev. Pits %", st.severityPitsn.toFixed(3) + "%");
+        h += row("Sev. Scratches %", st.severityScratchesn.toFixed(3) + "%");
+        h += row("Sev. Total % (Void Vol)", st.severityTotaln.toFixed(3) + "%");
+
+        h += `<tr><td colspan="2" style="padding-top:10px; font-weight:bold; color:var(--accent); text-transform:uppercase; font-size:11px;">Experimental Complexity</td></tr>`;
+        h += row("Intersections", st.intersectionCount);
+        h += row("Intersect. Density", st.intersectionDensity.toFixed(1));
+        h += row("Texture Complex. Index", st.textureComplexityIndex.toFixed(2));
+        h += row("Complexity Het.", st.complexityHet.toFixed(2));
 
         h += `</table>`;
         content.innerHTML = h;

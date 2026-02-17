@@ -67,76 +67,197 @@ window.exportExcel = function (mode) {
     // NEW ORDER: Id, Species, Age, ...stats..., Tooth, Side, Part, Mag
     let headers = ["Id", "Species", "Age"];
 
-    if (mode === 'COUNTS' || mode === 'FULL') {
-        STATS_ORDER.forEach(k => headers.push(CATS[k].label));
-    }
-    if (mode === 'STATS' || mode === 'FULL') {
-        // Add robust headers
+    // HEADER LOGIC
+    if (mode === 'AVERAGE') {
+        // Average Mode: Counts + Stats + Mag (No Tooth/Side/Part)
+        STATS_ORDER.forEach(k => headers.push(CATS[k].label)); // Counts
         headers.push(
             "Crushing Index", "% Measured Pits", "Max Pit Dia", "Severity Pits",
             "Mean Scratch Width", "Aspect Ratio", "Severity Scratches", "Measured AR",
             "P/S Ratio", "Anisotropy", "Vector Consistency", "Mean Orient",
             "Bg Abrasion", "Severity Total", "Severity Ratio", "Mean Feat. Sev.",
-            "Durophagy Index", "Pit Het.", "Scratch Het.", "Global Het."
+            "Durophagy Index", "Pit Het.", "Scratch Het.", "Global Het.",
+            "Density Pits", "Density Scratches", "Density Total",
+            "Sev. Pits %", "Sev. Scratches %", "Sev. Total %",
+            "Intersections", "Intersection Density", "Texture Complexity Index",
+            "Complexity Het.", "Mean Feature Dims. (MFD)"
         );
+        headers.push("Mag"); // Mag at the end
+    } else {
+        // Standard Modes (COUNTS, STATS, FULL)
+        if (mode === 'COUNTS' || mode === 'FULL') {
+            STATS_ORDER.forEach(k => headers.push(CATS[k].label));
+        }
+        if (mode === 'STATS' || mode === 'FULL') {
+            headers.push(
+                "Crushing Index", "% Measured Pits", "Max Pit Dia", "Severity Pits",
+                "Mean Scratch Width", "Aspect Ratio", "Severity Scratches", "Measured AR",
+                "P/S Ratio", "Anisotropy", "Vector Consistency", "Mean Orient",
+                "Bg Abrasion", "Severity Total", "Severity Ratio", "Mean Feat. Sev.",
+                "Durophagy Index", "Pit Het.", "Scratch Het.", "Global Het.",
+                "Density Pits", "Density Scratches", "Density Total",
+                "Sev. Pits %", "Sev. Scratches %", "Sev. Total %",
+                "Intersections", "Intersection Density", "Texture Complexity Index",
+                "Complexity Het.", "Mean Feature Dims. (MFD)"
+            );
+        }
+        // Full Metadata for standard modes
+        headers.push("Tooth", "Side", "Part", "Mag");
     }
-
-    // APPEND METADATA COLUMNS (Always at the end)
-    // Removed: OriginalFilename, SpecimenID
-    headers.push("Tooth", "Side", "Part", "Mag");
 
     csv += headers.join(sep) + "\n";
 
-    projectSamples.forEach(s => {
-        // Use specimenId for export if available (for replicates), otherwise name
-        const exportId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
-        const md = s.metadata || {};
+    // DATA PROCESSING
+    if (mode === 'AVERAGE') {
+        // --- AGGREGATION LOGIC ---
+        // 1. Group by Specimen ID
+        const groups = {};
+        const orderedIds = []; // Keep track of insertion order to match Sidebar
 
-        // AGE LOGIC: If tooth starts with 'd' or 'D', it is Juvenile (J), else Adult (A)
-        let age = "A";
-        if (md.tooth && (md.tooth.startsWith('d') || md.tooth.startsWith('D'))) {
-            age = "J";
-        }
+        projectSamples.forEach(s => {
+            const spId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
+            if (!groups[spId]) {
+                groups[spId] = [];
+                orderedIds.push(spId); // Add to ordered list on first encounter
+            }
+            groups[spId].push(s);
+        });
 
-        // NEW ROW ORDER: Id, Species, Age
-        let row = [`"${exportId}"`, `"${s.group || currentProjectName}"`, `"${age}"`];
+        // 2. Process each Group IN ORDER (using orderedIds instead of Object.keys)
+        orderedIds.forEach(spId => {
+            const groupSamples = groups[spId];
+            const numSamples = groupSamples.length;
+            const firstS = groupSamples[0];
+            const md = firstS.metadata || {};
 
-        if (mode === 'COUNTS' || mode === 'FULL') {
-            let counts = {};
-            STATS_ORDER.forEach(k => counts[k] = 0);
-            s.items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++; });
-            STATS_ORDER.forEach(k => row.push(counts[k]));
-        }
+            // Determine Age from first sample (assuming consistency)
+            let age = "A";
+            if (md.tooth && (md.tooth.startsWith('d') || md.tooth.startsWith('D'))) {
+                age = "J";
+            }
 
-        if (mode === 'STATS' || mode === 'FULL') {
-            const calibAdapter = s.calibration ? {
-                calibrated: s.calibration.calibrated,
-                pixelsPerUnit: s.calibration.ppu
-            } : { calibrated: false, pixelsPerUnit: 1 };
+            // Initialize Sum Containers
+            let countSums = {};
+            STATS_ORDER.forEach(k => countSums[k] = 0);
 
-            const st = getStatsFromItems(s.items, calibAdapter);
+            // Stats keys from statistics.js return object
+            const statKeys = [
+                'crushingIndex', 'percMeasuredPits', 'maxPitDiameter', 'severityPits',
+                'meanScratchWidth', 'aspectRatio', 'severityScratches', 'measuredAspectRatio',
+                'psRatio', 'anisotropy', 'vectorConsistency', 'meanOrient',
+                'bgAbrasion', 'severityTotal', 'severityRatio', 'meanFeatureSeverity',
+                'durophagyIndex', 'pitHet', 'scratchHet', 'globalHet',
+                'densityPits', 'densityScratches', 'densityTotal',
+                'severityPitsn', 'severityScratchesn', 'severityTotaln',
+                'intersectionCount', 'intersectionDensity', 'textureComplexityIndex',
+                'complexityHet', 'mfd'
+            ];
+            let statSums = {};
+            statKeys.forEach(k => statSums[k] = 0);
 
-            // Based on statistics.js return object
+            // 3. Accumulate Data
+            groupSamples.forEach(s => {
+                // Counts
+                // Re-calculate counts for safety or trust s.items? safely recalc
+                let localCounts = {};
+                STATS_ORDER.forEach(k => localCounts[k] = 0);
+                s.items.forEach(it => { if (localCounts[it.catId] !== undefined) localCounts[it.catId]++; });
+
+                STATS_ORDER.forEach(k => countSums[k] += localCounts[k]);
+
+                // Stats
+                const calibAdapter = s.calibration ? {
+                    calibrated: s.calibration.calibrated,
+                    pixelsPerUnit: s.calibration.ppu
+                } : { calibrated: false, pixelsPerUnit: 1 };
+
+                const st = getStatsFromItems(s.items, calibAdapter);
+                statKeys.forEach(k => statSums[k] += (st[k] || 0));
+            });
+
+            // 4. Construct Row (Averages)
+            let row = [`"${spId}"`, `"${firstS.group || currentProjectName}"`, `"${age}"`];
+
+            // Average Counts
+            STATS_ORDER.forEach(k => {
+                const avg = countSums[k] / numSamples;
+                row.push(avg.toFixed(2)); // Keeping decimals for averages
+            });
+
+            // Average Stats
+            statKeys.forEach(k => {
+                const avg = statSums[k] / numSamples;
+                // Special formatting if needed, otherwise fixed(2-4)
+                if (k === 'psRatio' || k.includes('Het') || k.includes('density') || k.includes('severity') && k.endsWith('n') || k === 'textureComplexityIndex' || k === 'complexityHet' || k === 'mfd') row.push(avg.toFixed(3));
+                else if (k === 'bgAbrasion') row.push(avg.toFixed(4));
+                else if (k === 'intersectionCount') row.push(avg.toFixed(1)); // Avg count can be decimal
+                else if (k === 'intersectionDensity') row.push(avg.toFixed(1));
+                else row.push(avg.toFixed(2));
+            });
+
+            // Mag (Last Column)
+            row.push(`"${md.mag || ''}"`);
+
+            csv += row.join(sep) + "\n";
+        });
+
+    } else {
+        // --- STANDARD ROW-BY-ROW LOGIC ---
+        projectSamples.forEach(s => {
+            // Use specimenId for export if available (for replicates), otherwise name
+            const exportId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
+            const md = s.metadata || {};
+
+            // AGE LOGIC: If tooth starts with 'd' or 'D', it is Juvenile (J), else Adult (A)
+            let age = "A";
+            if (md.tooth && (md.tooth.startsWith('d') || md.tooth.startsWith('D'))) {
+                age = "J";
+            }
+
+            // NEW ROW ORDER: Id, Species, Age
+            let row = [`"${exportId}"`, `"${s.group || currentProjectName}"`, `"${age}"`];
+
+            if (mode === 'COUNTS' || mode === 'FULL') {
+                let counts = {};
+                STATS_ORDER.forEach(k => counts[k] = 0);
+                s.items.forEach(it => { if (counts[it.catId] !== undefined) counts[it.catId]++; });
+                STATS_ORDER.forEach(k => row.push(counts[k]));
+            }
+
+            if (mode === 'STATS' || mode === 'FULL') {
+                const calibAdapter = s.calibration ? {
+                    calibrated: s.calibration.calibrated,
+                    pixelsPerUnit: s.calibration.ppu
+                } : { calibrated: false, pixelsPerUnit: 1 };
+
+                const st = getStatsFromItems(s.items, calibAdapter);
+
+                // Based on statistics.js return object
+                row.push(
+                    st.crushingIndex.toFixed(2), st.percMeasuredPits.toFixed(1), st.maxPitDiameter.toFixed(2), st.severityPits.toFixed(0),
+                    st.meanScratchWidth.toFixed(2), st.aspectRatio.toFixed(2), st.severityScratches.toFixed(0), st.measuredAspectRatio.toFixed(2),
+                    st.psRatio.toFixed(3), st.anisotropy.toFixed(3), st.vectorConsistency.toFixed(3), st.meanOrient.toFixed(1),
+                    st.bgAbrasion.toFixed(4), st.severityTotal.toFixed(0), st.severityRatio.toFixed(3), st.meanFeatureSeverity.toFixed(1),
+                    st.durophagyIndex.toFixed(2), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2),
+                    st.densityPits.toFixed(1), st.densityScratches.toFixed(1), st.densityTotal.toFixed(1),
+                    st.severityPitsn.toFixed(3), st.severityScratchesn.toFixed(3), st.severityTotaln.toFixed(3),
+                    st.intersectionCount, st.intersectionDensity.toFixed(1), st.textureComplexityIndex.toFixed(2),
+                    st.complexityHet.toFixed(2), st.mfd.toFixed(2)
+                );
+            }
+
+            // APPEND METADATA VALUES
+            // md already defined above
             row.push(
-                st.crushingIndex.toFixed(2), st.percMeasuredPits.toFixed(1), st.maxPitDiameter.toFixed(2), st.severityPits.toFixed(0),
-                st.meanScratchWidth.toFixed(2), st.aspectRatio.toFixed(2), st.severityScratches.toFixed(0), st.measuredAspectRatio.toFixed(2),
-                st.psRatio.toFixed(3), st.anisotropy.toFixed(3), st.vectorConsistency.toFixed(3), st.meanOrient.toFixed(1),
-                st.bgAbrasion.toFixed(4), st.severityTotal.toFixed(0), st.severityRatio.toFixed(3), st.meanFeatureSeverity.toFixed(1),
-                st.durophagyIndex.toFixed(2), st.pitHet.toFixed(2), st.scratchHet.toFixed(2), st.globalHet.toFixed(2)
+                `"${md.tooth || ''}"`,
+                `"${md.side || ''}"`,
+                `"${md.part || ''}"`,
+                `"${md.mag || ''}"`
             );
-        }
 
-        // APPEND METADATA VALUES
-        // md already defined above
-        row.push(
-            `"${md.tooth || ''}"`,
-            `"${md.side || ''}"`,
-            `"${md.part || ''}"`,
-            `"${md.mag || ''}"`
-        );
-
-        csv += row.join(sep) + "\n";
-    });
+            csv += row.join(sep) + "\n";
+        });
+    }
 
     const l = document.createElement('a');
     l.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
@@ -412,9 +533,10 @@ window.handleFileSelection = function (e) {
 
                     if (projectSamples.length === 0) {
                         projectSamples = newSamples;
+                        if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Load
                         currentProjectName = newProjName;
                         document.getElementById('headerTitle').innerText = currentProjectName;
-                        loadSampleIntoView(projectSamples[0].id);
+                        if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
                     } else {
                         showCustomDialog(
                             "Import Project",
@@ -426,6 +548,7 @@ window.handleFileSelection = function (e) {
                                     onClick: () => {
                                         projectSamples.forEach(s => { if (!s.group) s.group = currentProjectName; });
                                         projectSamples = projectSamples.concat(newSamples);
+                                        if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Merge
                                         renderSampleList();
                                     }
                                 },
@@ -434,9 +557,10 @@ window.handleFileSelection = function (e) {
                                     class: "btn-red",
                                     onClick: () => {
                                         projectSamples = newSamples;
+                                        if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Replace
                                         currentProjectName = newProjName;
                                         document.getElementById('headerTitle').innerText = currentProjectName;
-                                        loadSampleIntoView(projectSamples[0].id);
+                                        if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
                                     }
                                 },
                                 { label: "Cancel", class: "", onClick: () => { } }
