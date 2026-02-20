@@ -348,7 +348,7 @@ window.renderSampleList = function () {
         // Calculate mini-stats for the list item
         let counts = {};
         STATS_ORDER.forEach(k => counts[k] = 0);
-        s.items.forEach(it => {
+        (s.items || []).forEach(it => { // FIX: Protect against missing items array in older files
             if (counts[it.catId] !== undefined) counts[it.catId]++
         });
 

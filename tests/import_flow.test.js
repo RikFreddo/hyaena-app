@@ -123,4 +123,32 @@ describe('Import Flow', () => {
         expect(window.currentProjectName).toBe("Test_Imported_Project");
         expect(window.renderSampleList).toHaveBeenCalled(); // The bug fix!
     });
+
+    it('should handle older project files where items is missing or called features', async () => {
+        const projectData = {
+            type: "hyaena_project",
+            name: "Legacy_Project",
+            samples: [
+                { id: '1', name: 'S1', group: 'G1', features: [{ catId: 'sp', x: 10, y: 10 }] }, // Uses 'features'
+                { id: '2', name: 'S2', group: 'G1' } // Missing 'items' entirely
+            ]
+        };
+        const file = new File([JSON.stringify(projectData)], 'legacy.json', { type: 'application/json' });
+        const event = { target: { files: [file], value: '' } };
+
+        window.projectSamples = [];
+        window.renderSampleList.mockClear();
+
+        window.handleFileSelection(event);
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(window.projectSamples.length).toBe(2);
+        // Assert 'features' was mapped to 'items'
+        expect(window.projectSamples[0].items.length).toBe(1);
+        expect(window.projectSamples[0].items[0].catId).toBe('sp');
+        // Assert missing 'items' is initialized to empty array
+        expect(window.projectSamples[1].items).toEqual([]);
+        expect(window.renderSampleList).toHaveBeenCalled(); // Ensure no crash blocked rendering
+    });
 });

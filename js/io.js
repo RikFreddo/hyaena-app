@@ -529,7 +529,13 @@ window.handleFileSelection = function (e) {
                     const newSamples = data.samples || [];
                     const newProjName = data.name || "Imported_Project";
 
-                    newSamples.forEach(s => { if (!s.group) s.group = newProjName; });
+                    newSamples.forEach(s => {
+                        if (!s.group) s.group = newProjName;
+                        // FIX: Ensure older projects with 'features' get mapped to 'items'
+                        if (!s.items) {
+                            s.items = s.features ? [...s.features] : [];
+                        }
+                    });
 
                     if (projectSamples.length === 0) {
                         projectSamples = newSamples;
