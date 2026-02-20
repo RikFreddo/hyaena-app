@@ -3,15 +3,17 @@
 // APP INITIALIZATION
 // ==========================================================================
 
+const APP_VERSION = '0.26.13';
+
 const APP = {
-    version: '0.25.43',
+    version: '0.26.13',
     init: function () {
-        console.log("Hyaena App v" + this.version + " Initializing...");
+        console.log("Hyaena v" + this.version + " Initialized");
 
-        // Element bindings
-        this.bindEvents();
-
-        // Setup Service Worker
+        // ... hook events
+        if (typeof window.bindEvents === 'function') {
+            window.bindEvents();
+        } // Setup Service Worker
         this.registerSW();
 
         // Initial State

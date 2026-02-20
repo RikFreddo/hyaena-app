@@ -410,6 +410,9 @@ window.showEditSampleDialog = function (sample, onConfirm) {
         defaultAge = (md.tooth.startsWith('d') || md.tooth.startsWith('D')) ? 'J' : 'A';
     }
 
+    const defaultSpecimenId = md.specimenId || sample.name;
+
+    container.appendChild(createField("Specimen ID (Export) 🏷️", defaultSpecimenId, "specimenId")); // New field
     container.appendChild(createField("Age (A/J) ⏳", defaultAge, "age")); // Moved Up
     container.appendChild(createField("Tooth (e.g. m1, P4)", md.tooth, "tooth"));
     container.appendChild(createField("Side (e.g. buc, ling)", md.side, "side"));
@@ -433,8 +436,8 @@ window.showEditSampleDialog = function (sample, onConfirm) {
                         part: document.getElementById('edit_part').value.trim(),
                         mag: document.getElementById('edit_mag').value.trim(),
                         age: document.getElementById('edit_age').value.trim().toUpperCase(), // Start Age
-                        originalFilename: md.originalFilename, // Preserve original
-                        specimenId: md.specimenId // Preserve original
+                        specimenId: document.getElementById('edit_specimenId').value.trim(), // Get updated Specimen ID
+                        originalFilename: md.originalFilename // Preserve original
                     }
                 };
                 if (!newData.name) {

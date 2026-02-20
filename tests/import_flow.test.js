@@ -100,4 +100,27 @@ describe('Import Flow', () => {
         expect(sample.metadata.tooth).toBe('m2');
         expect(window.loadImageFromFile).toHaveBeenCalled();
     });
+
+    it('should call renderSampleList when a new project is loaded', async () => {
+        const projectData = {
+            type: "hyaena_project",
+            name: "Test_Imported_Project",
+            samples: [{ id: '1', name: 'S1', group: 'G1', items: [] }]
+        };
+        const file = new File([JSON.stringify(projectData)], 'project.json', { type: 'application/json' });
+        const event = { target: { files: [file], value: '' } };
+
+        // Ensure project is empty
+        window.projectSamples = [];
+        window.renderSampleList.mockClear();
+
+        window.handleFileSelection(event);
+
+        // handleFileSelection uses FileReader, which is async. We need to wait a tick.
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(window.projectSamples.length).toBe(1);
+        expect(window.currentProjectName).toBe("Test_Imported_Project");
+        expect(window.renderSampleList).toHaveBeenCalled(); // The bug fix!
+    });
 });

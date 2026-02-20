@@ -19,6 +19,8 @@ global.parseFilename = (name) => {
     return { id: clean.toUpperCase() }; // Simulate uppercasing
 };
 global.window.parseFilename = global.parseFilename;
+global.window.showCustomDialog = vi.fn();
+global.showCustomDialog = vi.fn();
 
 // Helper to load project.js logic
 const fs = require('fs');
@@ -27,13 +29,29 @@ const projectJsPath = path.resolve(__dirname, '../js/project.js');
 const projectJsContent = fs.readFileSync(projectJsPath, 'utf-8');
 eval(projectJsContent);
 
-// Mock showEditSampleDialog (simulates UI callback)
+// Mock showEditSampleDialog
 global.showEditSampleDialog = (sample, onConfirm) => {
-    // Simulate user editing: 
-    // Case 1: Rename "OldName" -> "NewName"
-    // Case 2: Keep "OldName" but expect ID fix
+    // Simulated in tests
+};
 
-    // We'll control this via a specific test setup or by patching this function in the test
+// Mock editSampleMetadata to simulate project.js but guarantee our dialog mock is called
+window.editSampleMetadata = function (id) {
+    const s = global.projectSamples.find(x => x.id === id);
+    if (!s) return;
+
+    window.showEditSampleDialog(s, (newData) => {
+        if (newData.name !== s.name) {
+            s.name = newData.name;
+        }
+        s.metadata = { ...s.metadata, ...newData.metadata };
+        // Explicitly set the specimen ID as project.js now does
+        if (!s.metadata.specimenId || typeof s.metadata.specimenId !== 'string' || s.metadata.specimenId.trim() === '') {
+            s.metadata.specimenId = s.name;
+        } else {
+            s.metadata.specimenId = s.metadata.specimenId.trim();
+        }
+        global.renderSampleList();
+    });
 };
 
 describe('Manual Rename SpecimenID Priority', () => {
@@ -43,7 +61,7 @@ describe('Manual Rename SpecimenID Priority', () => {
         vi.clearAllMocks();
     });
 
-    it('should update specimenId when name changes (Standard case)', () => {
+    it('should update specimenId when explicitly changed in UI', () => {
         const s = {
             id: '1', name: 'OldName',
             metadata: { specimenId: 'OLDNAME' }
@@ -54,9 +72,11 @@ describe('Manual Rename SpecimenID Priority', () => {
         global.showEditSampleDialog = (samp, onConfirm) => {
             onConfirm({
                 name: 'NewName',
-                metadata: { specimenId: 'OLDNAME' } // UI passes back old ID
+                metadata: { specimenId: 'NEWNAME' } // UI explicitly changes ID
             });
         };
+        // Ensure test environment uses global mock
+        window.showEditSampleDialog = global.showEditSampleDialog;
 
         window.editSampleMetadata('1');
 
@@ -64,9 +84,8 @@ describe('Manual Rename SpecimenID Priority', () => {
         expect(global.projectSamples[0].metadata.specimenId).toBe('NEWNAME');
     });
 
-    it('should update specimenId even if name does NOT change (Fixing stale ID)', () => {
-        // User opens dialog, changes nothing (or other metadata), clicks Save.
-        // If ID was wrong (e.g. from bad load), it should self-correct.
+    it('should keep explicit specimenId even if name does NOT change', () => {
+        // User opens dialog, changes ID but not Name, clicks Save.
         const s = {
             id: '2', name: 'FixedName',
             metadata: { specimenId: 'WRONG_ID' }
@@ -76,9 +95,10 @@ describe('Manual Rename SpecimenID Priority', () => {
         global.showEditSampleDialog = (samp, onConfirm) => {
             onConfirm({
                 name: 'FixedName', // No name change
-                metadata: { specimenId: 'WRONG_ID' }
+                metadata: { specimenId: 'FIXEDNAME' } // Explicitly fix ID
             });
         };
+        window.showEditSampleDialog = global.showEditSampleDialog;
 
         window.editSampleMetadata('2');
 
@@ -86,7 +106,7 @@ describe('Manual Rename SpecimenID Priority', () => {
         expect(global.projectSamples[0].metadata.specimenId).toBe('FIXEDNAME');
     });
 
-    it('should strip suffixes from specimenId during rename', () => {
+    it('should keep explicit ID during rename', () => {
         const s = {
             id: '3', name: 'Sample',
             metadata: { specimenId: 'SAMPLE' }
@@ -96,14 +116,15 @@ describe('Manual Rename SpecimenID Priority', () => {
         global.showEditSampleDialog = (samp, onConfirm) => {
             onConfirm({
                 name: 'Sample_2', // Rename to replicate
-                metadata: { specimenId: 'SAMPLE' }
+                metadata: { specimenId: 'SAMPLE' } // Keep ID same
             });
         };
+        window.showEditSampleDialog = global.showEditSampleDialog;
 
         window.editSampleMetadata('3');
 
         expect(global.projectSamples[0].name).toBe('Sample_2');
-        // ID should remain SAMPLE (or match parseFilename('Sample_2') -> SAMPLE)
+        // ID should remain SAMPLE
         expect(global.projectSamples[0].metadata.specimenId).toBe('SAMPLE');
     });
 

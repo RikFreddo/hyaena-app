@@ -534,6 +534,7 @@ window.handleFileSelection = function (e) {
                     if (projectSamples.length === 0) {
                         projectSamples = newSamples;
                         if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Load
+                        renderSampleList(); // NEW: Missing render call
                         currentProjectName = newProjName;
                         document.getElementById('headerTitle').innerText = currentProjectName;
                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
@@ -558,6 +559,7 @@ window.handleFileSelection = function (e) {
                                     onClick: () => {
                                         projectSamples = newSamples;
                                         if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Replace
+                                        renderSampleList(); // NEW: Missing render call
                                         currentProjectName = newProjName;
                                         document.getElementById('headerTitle').innerText = currentProjectName;
                                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
