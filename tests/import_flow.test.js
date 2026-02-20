@@ -151,4 +151,31 @@ describe('Import Flow', () => {
         expect(window.projectSamples[1].items).toEqual([]);
         expect(window.renderSampleList).toHaveBeenCalled(); // Ensure no crash blocked rendering
     });
+
+    it('should ignore null samples in corrupted project files', async () => {
+        const projectData = {
+            type: "hyaena_project",
+            name: "Corrupt_Project",
+            samples: [
+                { id: '1', name: 'Valid S1', group: 'G1', items: [] },
+                null, // Simulate corruption / bad save
+                { id: '3', name: 'Valid S3', group: 'G1', items: [] }
+            ]
+        };
+        const file = new File([JSON.stringify(projectData)], 'corrupt.json', { type: 'application/json' });
+        const event = { target: { files: [file], value: '' } };
+
+        window.projectSamples = [];
+        window.renderSampleList.mockClear();
+
+        window.handleFileSelection(event);
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // The null sample should have been filtered out
+        expect(window.projectSamples.length).toBe(2);
+        expect(window.projectSamples[0].name).toBe('Valid S1');
+        expect(window.projectSamples[1].name).toBe('Valid S3');
+        expect(window.renderSampleList).toHaveBeenCalled(); // Rendering should proceed normally
+    });
 });

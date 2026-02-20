@@ -526,8 +526,11 @@ window.handleFileSelection = function (e) {
             try {
                 const data = JSON.parse(evt.target.result);
                 if (data.type === "hyaena_project") {
-                    const newSamples = data.samples || [];
+                    let newSamples = data.samples || [];
                     const newProjName = data.name || "Imported_Project";
+
+                    // Filter out null or fundamentally invalid samples that might exist in corrupted legacy projects
+                    newSamples = newSamples.filter(s => s !== null && typeof s === 'object');
 
                     newSamples.forEach(s => {
                         if (!s.group) s.group = newProjName;
