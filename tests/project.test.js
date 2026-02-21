@@ -29,6 +29,7 @@ describe('Project Management', () => {
         window.saveHistory = vi.fn();
         window.resetHistory = vi.fn();
         window.syncState = vi.fn();
+        window.parseFilename = vi.fn((name) => ({ id: name.replace(/\.[^/.]+$/, "") }));
 
         // MOCK CUSTOM DIALOGS TO AUTO-CONFIRM
         window.showCustomDialog = vi.fn((title, msg, buttons) => {

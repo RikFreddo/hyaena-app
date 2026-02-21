@@ -526,24 +526,14 @@ window.handleFileSelection = function (e) {
             try {
                 const data = JSON.parse(evt.target.result);
                 if (data.type === "hyaena_project") {
-                    let newSamples = data.samples || [];
+                    const newSamples = data.samples || [];
                     const newProjName = data.name || "Imported_Project";
 
-                    // Filter out null or fundamentally invalid samples that might exist in corrupted legacy projects
-                    newSamples = newSamples.filter(s => s !== null && typeof s === 'object');
-
-                    newSamples.forEach(s => {
-                        if (!s.group) s.group = newProjName;
-                        // FIX: Ensure older projects with 'features' get mapped to 'items'
-                        if (!s.items) {
-                            s.items = s.features ? [...s.features] : [];
-                        }
-                    });
+                    newSamples.forEach(s => { if (!s.group) s.group = newProjName; });
 
                     if (projectSamples.length === 0) {
                         projectSamples = newSamples;
                         if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Load
-                        renderSampleList(); // NEW: Missing render call
                         currentProjectName = newProjName;
                         document.getElementById('headerTitle').innerText = currentProjectName;
                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
@@ -568,7 +558,6 @@ window.handleFileSelection = function (e) {
                                     onClick: () => {
                                         projectSamples = newSamples;
                                         if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Replace
-                                        renderSampleList(); // NEW: Missing render call
                                         currentProjectName = newProjName;
                                         document.getElementById('headerTitle').innerText = currentProjectName;
                                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);

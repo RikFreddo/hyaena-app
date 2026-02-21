@@ -60,16 +60,18 @@ describe('UI Stats Modal', () => {
             pitHet: 0.1,
             scratchHet: 0.2,
             globalHet: 0.15,
-            densityPits: 10,
-            densityScratches: 20,
-            densityTotal: 30,
-            severityPitsn: 1,
-            severityScratchesn: 2,
-            severityTotaln: 3,
+            // Add missing ones for 0.26.11 Stats list
+            densityPits: 1.0,
+            densityScratches: 1.0,
+            densityTotal: 2.0,
+            severityPitsn: 0.5,
+            severityScratchesn: 0.5,
+            severityTotaln: 1.0,
             intersectionCount: 5,
-            intersectionDensity: 0.5,
-            textureComplexityIndex: 1.5,
-            complexityHet: 0.2
+            intersectionDensity: 1.2,
+            textureComplexityIndex: 2.1,
+            complexityHet: 0.5,
+            mfd: 3.5
         });
 
         // Load ui.js logic (we can't import easily if it's not a module, so we paste/eval or rely on implementation being global)

@@ -63,40 +63,28 @@ if (typeof parseFilename !== 'undefined') window.parseFilename = parseFilename;
 eval(projectParams);
 
 // Mock showEditSampleDialog since it interacts with UI
+// We will manually trigger the callback that showEditSampleDialog would trigger
 window.showEditSampleDialog = function (sample, onConfirm) {
-    const newName = "CorrectID";
+    // Determine the new name we want to test
+    const newName = "CorrectID"; // The user input
+
+    // Simulate what the UI does: constructs new data object
     const newData = {
         name: newName,
         metadata: {
+            // Assume user kept other metadata same or changed it, doesn't matter for this test
             tooth: sample.metadata.tooth,
             side: sample.metadata.side,
             part: sample.metadata.part,
             mag: sample.metadata.mag,
             age: sample.metadata.age,
             originalFilename: sample.metadata.originalFilename,
-            specimenId: "CORRECTID"
+            specimenId: sample.metadata.specimenId // UI preserves this currently
         }
     };
+
+    // Call the callback
     onConfirm(newData);
-};
-
-// Define editSampleMetadata to explicitly trigger our mocked logic since eval scope sometimes misses global assignments
-window.editSampleMetadata = function (id) {
-    const s = window.projectSamples.find(x => x.id === id);
-    if (!s) return;
-
-    window.showEditSampleDialog(s, (newData) => {
-        if (newData.name !== s.name) {
-            s.name = newData.name;
-        }
-        s.metadata = { ...s.metadata, ...newData.metadata };
-        // Explicitly set the specimen ID as project.js now does
-        if (!s.metadata.specimenId || typeof s.metadata.specimenId !== 'string' || s.metadata.specimenId.trim() === '') {
-            s.metadata.specimenId = s.name;
-        } else {
-            s.metadata.specimenId = s.metadata.specimenId.trim();
-        }
-    });
 };
 
 describe('Sample Renaming and Export ID', () => {
@@ -110,17 +98,21 @@ describe('Sample Renaming and Export ID', () => {
         window.activeSampleId = s.id;
     });
 
-    it('should update specimenId when sample is renamed explicitly', () => {
+    it('should update specimenId when sample is renamed', () => {
         const s = window.projectSamples[0];
 
         expect(s.name).toBe("BadID");
         expect(s.metadata.specimenId).toBe("BadID");
 
-        // We use the function from project.js, which triggers our showEditSampleDialog mock
+        // Trigger rename
+        // We use the function from project.js
         window.editSampleMetadata(s.id);
 
-        // After explicit rename in our mock dialog, project.js should update the name and ID
+        // After rename, name should be updated
         expect(s.name).toBe("CorrectID");
+
+        // ISSUE: specimenId should also be updated to "CorrectID" (or parsed equivalent)
+        // parseFilename returns UPPERCASE ID
         expect(s.metadata.specimenId).toBe("CORRECTID");
     });
 

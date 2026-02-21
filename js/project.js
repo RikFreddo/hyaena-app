@@ -170,12 +170,22 @@ window.editSampleMetadata = function (id) {
             nameChanged = true;
         }
 
-        // Ensure we always have a valid Specimen ID if the user somehow cleared it
-        if (!s.metadata.specimenId || typeof s.metadata.specimenId !== 'string' || s.metadata.specimenId.trim() === "") {
-            s.metadata.specimenId = s.name;
-        } else {
-            // Trim if it was provided
-            s.metadata.specimenId = s.metadata.specimenId.trim();
+        // Update Metadata (This overwrites s.metadata with values from dialog, potentially old specimenId)
+        s.metadata = { ...s.metadata, ...newData.metadata };
+
+        // [FIX] ALWAYS SYNC SPECIMEN ID WITH CURRENT NAME (USER REQUEST PRIORITIZES THIS)
+        // Regardless of whether name actually changed, we ensure ID matches the current name
+        // This fixes cases where ID was wrong/stale and user just hit Save.
+        const parser = (window.parseFilename || parseFilename);
+        if (parser) {
+            try {
+                const parsed = parser(s.name); // s.name is already updated
+                if (parsed && parsed.id) {
+                    s.metadata.specimenId = parsed.id;
+                }
+            } catch (e) {
+                console.error("Error parsing filename during rename:", e);
+            }
         }
 
         // Update UI
@@ -348,7 +358,7 @@ window.renderSampleList = function () {
         // Calculate mini-stats for the list item
         let counts = {};
         STATS_ORDER.forEach(k => counts[k] = 0);
-        (s.items || []).forEach(it => { // FIX: Protect against missing items array in older files
+        s.items.forEach(it => {
             if (counts[it.catId] !== undefined) counts[it.catId]++
         });
 

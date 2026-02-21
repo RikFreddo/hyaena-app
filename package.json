@@ -1,6 +1,6 @@
 {
   "name": "hyaena-app",
-  "version": "0.26.14",
+  "version": "0.26.11",
   "description": "Scientific Dental Microwear Analysis App",
   "main": "sw.js",
   "directories": {
