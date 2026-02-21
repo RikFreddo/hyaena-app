@@ -51,28 +51,28 @@ describe('Export Aggregated (Average) Mode', () => {
         vi.clearAllMocks();
     });
 
-    it('should aggregate samples by specimenId and average numeric values', () => {
+    it('should aggregate samples by specimenId extracted dynamically from the name', () => {
         // Setup Samples
-        // Sample 1: ID=A, Sp=10
+        // Sample 1: Name=A_1, Sp=10
         const s1 = {
-            id: '1', name: 'Sample_1', group: 'G1',
-            metadata: { specimenId: 'A', tooth: 'd1', mag: '10x' }, // Juv
+            id: '1', name: 'A_1', group: 'G1',
+            metadata: { tooth: 'd1', mag: '10x' }, // Juv
             items: Array(10).fill({ catId: 'sp' }),
             calibration: { ppu: 1, calibrated: false }
         };
 
-        // Sample 2: ID=A, Sp=20
+        // Sample 2: Name=A_2, Sp=20
         const s2 = {
-            id: '2', name: 'Sample_2', group: 'G1',
-            metadata: { specimenId: 'A', tooth: 'd1', mag: '10x' },
+            id: '2', name: 'A_2', group: 'G1',
+            metadata: { tooth: 'd1', mag: '10x' },
             items: Array(20).fill({ catId: 'sp' }), // Total Sp for A = 30, Avg = 15
             calibration: { ppu: 1, calibrated: false }
         };
 
-        // Sample 3: ID=B, Sp=5
+        // Sample 3: Name=B, Sp=5
         const s3 = {
-            id: '3', name: 'Sample_3', group: 'G2',
-            metadata: { specimenId: 'B', tooth: 'M1', mag: '20x' }, // Adult
+            id: '3', name: 'B', group: 'G2',
+            metadata: { tooth: 'M1', mag: '20x' }, // Adult
             items: Array(5).fill({ catId: 'sp' }),
             calibration: { ppu: 1, calibrated: false }
         };

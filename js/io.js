@@ -115,7 +115,7 @@ window.exportExcel = function (mode) {
         const orderedIds = []; // Keep track of insertion order to match Sidebar
 
         projectSamples.forEach(s => {
-            const spId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
+            const spId = s.name.replace(/_\d+$/, "");
             if (!groups[spId]) {
                 groups[spId] = [];
                 orderedIds.push(spId); // Add to ordered list on first encounter
@@ -204,8 +204,7 @@ window.exportExcel = function (mode) {
     } else {
         // --- STANDARD ROW-BY-ROW LOGIC ---
         projectSamples.forEach(s => {
-            // Use specimenId for export if available (for replicates), otherwise name
-            const exportId = s.metadata && s.metadata.specimenId ? s.metadata.specimenId : s.name;
+            const exportId = s.name.replace(/_\d+$/, "");
             const md = s.metadata || {};
 
             // AGE LOGIC: If tooth starts with 'd' or 'D', it is Juvenile (J), else Adult (A)
@@ -533,7 +532,6 @@ window.handleFileSelection = function (e) {
 
                     if (projectSamples.length === 0) {
                         projectSamples = newSamples;
-                        if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Load
                         currentProjectName = newProjName;
                         document.getElementById('headerTitle').innerText = currentProjectName;
                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);
@@ -557,7 +555,6 @@ window.handleFileSelection = function (e) {
                                     class: "btn-red",
                                     onClick: () => {
                                         projectSamples = newSamples;
-                                        if (window.sanitizeSpecimenIds) window.sanitizeSpecimenIds(); // FIX: Sync IDs on Replace
                                         currentProjectName = newProjName;
                                         document.getElementById('headerTitle').innerText = currentProjectName;
                                         if (projectSamples[0]) loadSampleIntoView(projectSamples[0].id);

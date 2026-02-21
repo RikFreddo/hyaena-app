@@ -60,7 +60,6 @@ describe('Regenerate Metadata & Renaming', () => {
         const updatedSample = window.projectSamples[0];
         // Expect Uppercase Clean ID
         expect(updatedSample.name).toBe("ZMP_MAM_12801");
-        expect(updatedSample.metadata.specimenId).toBe("ZMP_MAM_12801");
         // Metadata parsed
         expect(updatedSample.metadata.tooth).toBe("P4");
         expect(updatedSample.metadata.part).toBe("met");
@@ -85,12 +84,9 @@ describe('Regenerate Metadata & Renaming', () => {
 
         // First one stays clean
         expect(u1.name).toBe("ZMP_MAM_12801");
-        expect(u1.metadata.specimenId).toBe("ZMP_MAM_12801");
 
         // Second one gets suffix because "ZMP_MAM_12801" already exists
         expect(u2.name).toBe("ZMP_MAM_12801_2");
-        // But SpecimenID should remain clean for stats grouping
-        expect(u2.metadata.specimenId).toBe("ZMP_MAM_12801");
     });
 
     it('should use getUniqueName correctly', () => {

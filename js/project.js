@@ -173,21 +173,6 @@ window.editSampleMetadata = function (id) {
         // Update Metadata (This overwrites s.metadata with values from dialog, potentially old specimenId)
         s.metadata = { ...s.metadata, ...newData.metadata };
 
-        // [FIX] ALWAYS SYNC SPECIMEN ID WITH CURRENT NAME (USER REQUEST PRIORITIZES THIS)
-        // Regardless of whether name actually changed, we ensure ID matches the current name
-        // This fixes cases where ID was wrong/stale and user just hit Save.
-        const parser = (window.parseFilename || parseFilename);
-        if (parser) {
-            try {
-                const parsed = parser(s.name); // s.name is already updated
-                if (parsed && parsed.id) {
-                    s.metadata.specimenId = parsed.id;
-                }
-            } catch (e) {
-                console.error("Error parsing filename during rename:", e);
-            }
-        }
-
         // Update UI
         if (activeSampleId === id) {
             currentFileName = s.name;
@@ -540,28 +525,6 @@ window.regenerateMetadata = function () {
     );
 };
 
-window.sanitizeSpecimenIds = function () {
-    let count = 0;
-    projectSamples.forEach(s => {
-        // Enforce SpecimenID from Current Name
-        // This ensures export/aggregation always matches the visible list name
-        // parseFilename handles stripping suffixes like _2 automatically
-        if (typeof parseFilename === 'function') {
-            const parsed = parseFilename(s.name); // Always use name
-            if (parsed && parsed.id) {
-                // If ID is different or missing, update it
-                if (!s.metadata) s.metadata = {};
-                if (s.metadata.specimenId !== parsed.id) {
-                    s.metadata.specimenId = parsed.id;
-                    count++;
-                }
-            }
-        }
-    });
-    if (count > 0) {
-        console.log(`[Sanitize] Updated specimenId for ${count} samples based on current names.`);
-    }
-};
 
 window.performRegeneration = function () {
     let count = 0;
@@ -598,12 +561,6 @@ window.performRegeneration = function () {
                     s.name = newName;
                     modified = true;
                 }
-            }
-
-            // Sync specimenId (Keep clean ID, do not add suffix _2 etc to metadata ID)
-            if (!s.metadata.specimenId || s.metadata.specimenId !== parsed.id) {
-                s.metadata.specimenId = parsed.id;
-                modified = true;
             }
 
             if (modified) count++;
