@@ -80,10 +80,10 @@ describe('Aggregated Export Order', () => {
         // If sorting alphabetically by keys happened, it would be Antelope, Bear, Zebra.
 
         global.projectSamples = [
-            { id: '1', name: 'Zebra_1', metadata: { specimenId: 'Zebra' }, items: [] },
-            { id: '2', name: 'Zebra_2', metadata: { specimenId: 'Zebra' }, items: [] },
+            { id: '1', name: 'Zebra_2', metadata: { specimenId: 'Zebra' }, items: [] },
+            { id: '2', name: 'Zebra_3', metadata: { specimenId: 'Zebra' }, items: [] },
             { id: '3', name: 'Antelope', metadata: { specimenId: 'Antelope' }, items: [] },
-            { id: '4', name: 'Bear_1', metadata: { specimenId: 'Bear' }, items: [] }
+            { id: '4', name: 'Bear_2', metadata: { specimenId: 'Bear' }, items: [] }
         ];
 
         window.exportExcel('AVERAGE');

@@ -82,7 +82,7 @@ function parseFilename(filename) {
         const last = remainingTokens[remainingTokens.length - 1];
         if (reSeq.test(last)) {
             const val = parseInt(last, 10);
-            if (val < 100 && remainingTokens.length > 1) {
+            if (val >= 2 && val <= 15 && remainingTokens.length > 1) {
                 seq = last;
                 remainingTokens.pop();
             }

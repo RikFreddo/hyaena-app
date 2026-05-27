@@ -53,17 +53,17 @@ describe('Export Aggregated (Average) Mode', () => {
 
     it('should aggregate samples by specimenId extracted dynamically from the name', () => {
         // Setup Samples
-        // Sample 1: Name=A_1, Sp=10
+        // Sample 1: Name=A_2, Sp=10
         const s1 = {
-            id: '1', name: 'A_1', group: 'G1',
+            id: '1', name: 'A_2', group: 'G1',
             metadata: { tooth: 'd1', mag: '10x' }, // Juv
             items: Array(10).fill({ catId: 'sp' }),
             calibration: { ppu: 1, calibrated: false }
         };
 
-        // Sample 2: Name=A_2, Sp=20
+        // Sample 2: Name=A_3, Sp=20
         const s2 = {
-            id: '2', name: 'A_2', group: 'G1',
+            id: '2', name: 'A_3', group: 'G1',
             metadata: { tooth: 'd1', mag: '10x' },
             items: Array(20).fill({ catId: 'sp' }), // Total Sp for A = 30, Avg = 15
             calibration: { ppu: 1, calibrated: false }

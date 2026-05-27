@@ -4,7 +4,7 @@
 // ==========================================================================
 
 const APP = {
-    version: '0.26.12',
+    version: '0.26.13',
     init: function () {
         console.log("Hyaena App v" + this.version + " Initializing...");
 

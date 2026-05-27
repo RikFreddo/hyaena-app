@@ -115,7 +115,7 @@ window.exportExcel = function (mode) {
         const orderedIds = []; // Keep track of insertion order to match Sidebar
 
         projectSamples.forEach(s => {
-            const spId = s.name.replace(/_\d+$/, "");
+            const spId = s.name.replace(/_([2-9]|1[0-5])$/, "");
             if (!groups[spId]) {
                 groups[spId] = [];
                 orderedIds.push(spId); // Add to ordered list on first encounter
@@ -204,7 +204,7 @@ window.exportExcel = function (mode) {
     } else {
         // --- STANDARD ROW-BY-ROW LOGIC ---
         projectSamples.forEach(s => {
-            const exportId = s.name.replace(/_\d+$/, "");
+            const exportId = s.name.replace(/_([2-9]|1[0-5])$/, "");
             const md = s.metadata || {};
 
             // AGE LOGIC: If tooth starts with 'd' or 'D', it is Juvenile (J), else Adult (A)

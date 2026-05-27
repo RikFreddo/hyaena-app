@@ -119,9 +119,9 @@ function getStatsFromItems(itemsList, calibration) {
     let maxPitDia = 0;
 
     // Grid for Heterogeneity
-    const cw = wPx / 10;
-    const ch = hPx / 10;
-    const gridP = Array(10).fill(0).map(() => Array(10).fill(0));
+    const cw = wPx / 9;
+    const ch = hPx / 9;
+    const gridP = Array(9).fill(0).map(() => Array(9).fill(0));
 
     pitsForStats.forEach(p => {
         let d = 0;
@@ -140,7 +140,7 @@ function getStatsFromItems(itemsList, calibration) {
         // Heterogeneity
         const x = Math.floor(p.x / cw);
         const y = Math.floor(p.y / ch);
-        if (x >= 0 && x < 10 && y >= 0 && y < 10) gridP[y][x]++;
+        if (x >= 0 && x < 9 && y >= 0 && y < 9) gridP[y][x]++;
     });
 
     res.crushingIndex = pitsForStats.length > 0 ? (totalDiaCI / pitsForStats.length) : 0;

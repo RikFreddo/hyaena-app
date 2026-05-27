@@ -45,12 +45,12 @@ describe('Utility Functions', () => {
 
     describe('parseFilename', () => {
         it('should parse complex filename', () => {
-            // Example: "Sample_1_dI1_buc" -> ID: SAMPLE (1 stripped as sequence)
-            const res = window.parseFilename('Sample_1-dI1-buc.jpg');
+            // Example: "Sample_2_dI1_buc" -> ID: SAMPLE (2 stripped as sequence)
+            const res = window.parseFilename('Sample_2-dI1-buc.jpg');
             expect(res.id).toBe('SAMPLE');
             expect(res.tooth).toBe('dI1');
             expect(res.side).toBe('buc');
-            expect(res.originalName).toBe('Sample_1-dI1-buc');
+            expect(res.originalName).toBe('Sample_2-dI1-buc');
         });
 
         it('should use filename as ID if no tokens', () => {

@@ -20,10 +20,10 @@ describe('parseFilename Logic (v0.24.12 Restoration)', () => {
         expect(res.tooth).toBe("m2");
     });
 
-    it('should treat numbers < 100 as sequence if not alone', () => {
-        const res = window.parseFilename("Sample_01.jpg");
+    it('should treat numbers between 2 and 15 as sequence if not alone', () => {
+        const res = window.parseFilename("Sample_02.jpg");
         expect(res.id).toBe("SAMPLE");
-        expect(res.seq).toBe("01");
+        expect(res.seq).toBe("02");
     });
 
     it('should NOT treat numbers >= 100 as sequence', () => {
